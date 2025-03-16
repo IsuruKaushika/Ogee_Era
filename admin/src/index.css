@@ -1,0 +1,31 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Prata&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+a.active hr{
+ display: block;
+}
+
+*{
+  font-family : outfit;
+}
+
+.prata-regular {
+    font-family: "Prata", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+  .active{
+    background-color: rgb(90, 165, 231);
+    border-color:aqua
+  }
+
+  select,input,textarea{
+    border:1px solid hwb(205 20% 41%);
+    outline-color:#74a2d1 ;
+    border-radius: 4px;
+  }
