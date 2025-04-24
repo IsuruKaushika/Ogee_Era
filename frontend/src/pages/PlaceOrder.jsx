@@ -32,6 +32,14 @@ const PlaceOrder = () => {
 
   const initiatePayherePayment = (orderData, orderId, merchantId, sandbox) => {
     // Create a PayHere payment object
+    const hash = md5(
+      merchantId +
+      orderId +
+      orderData.amount +
+      "LKR" +
+      md5(process.env.REACT_APP_MERCHANT_SECRET).toUpperCase()
+    ).toUpperCase();
+
     const paymentObject = {
       sandbox: sandbox, // Will be true in development, false in production
       merchant_id: merchantId,
@@ -49,6 +57,7 @@ const PlaceOrder = () => {
       address: orderData.address.street,
       city: orderData.address.city,
       country: orderData.address.country,
+      hash: hash,
     };
 
     // Create a form and submit it to PayHere
