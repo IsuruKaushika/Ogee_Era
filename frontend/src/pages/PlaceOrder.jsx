@@ -49,6 +49,7 @@ const PlaceOrder = () => {
       address: orderData.address.street,
       city: orderData.address.city,
       country: orderData.address.country,
+      hash: hash, // Hash generated on the backend
     };
 
     // Create a form and submit it to PayHere
