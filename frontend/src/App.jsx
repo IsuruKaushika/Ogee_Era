@@ -12,6 +12,8 @@ import PlaceOrder from './pages/PlaceOrder'
 import Orders from './pages/Orders'
 import Login from './pages/Login'
 import About from './pages/About'
+import PaymentSuccess from './pages/PaymentSuccess'
+import PaymentFailed from './pages/PaymentFail'
 
 import {ToastContainer,toast} from 'react-toastify'//used for notifications
 import 'react-toastify/dist/ReactToastify.css'
@@ -35,6 +37,8 @@ const App = () => {
         <Route path='/place-order' element={<PlaceOrder/>} />
         <Route path='/cart' element={<Cart/>} />
         <Route path='/orders' element={<Orders/>} />
+        <Route path='/payment-success' element={<PaymentSuccess/>} />
+        <Route path='/payment-failed' element={<PaymentFailed/>} />
                 
       </Routes>
        <Footer/>

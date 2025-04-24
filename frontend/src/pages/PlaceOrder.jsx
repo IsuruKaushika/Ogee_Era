@@ -122,6 +122,7 @@ const PlaceOrder = () => {
           
           if(payhereResponse.data.success) {
             // Initiate PayHere payment with the order ID, merchant ID, and hash received from backend
+            
             initiatePayherePayment(
               orderData, 
               payhereResponse.data.orderId,
@@ -129,6 +130,8 @@ const PlaceOrder = () => {
               payhereResponse.data.sandbox,
               payhereResponse.data.hash // Pass the hash from backend
             );
+            setCartItems({});
+            
           } else {
             toast.error(payhereResponse.data.message || 'Failed to create order');
           }

@@ -92,6 +92,7 @@ const updateQuantity = async (itemId,size,quantity) =>{
 
 
 }
+
 const getCartAmount =  () =>{
     let totalAmount =0;
     for(const items in cartItems){
