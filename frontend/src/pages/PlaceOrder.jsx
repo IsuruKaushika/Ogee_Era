@@ -26,8 +26,50 @@ const PlaceOrder = () => {
   const onChangeHandler = (event) => {
     const name = event.target.name;
     const value = event.target.value;
+
     setFormData(data => ({...data, [name]: value}));
-  }
+  };
+
+  const initiatePayherePayment = (orderData, orderId, merchantId, sandbox) => {
+    // Create a PayHere payment object
+    const paymentObject = {
+      sandbox: sandbox, // Will be true in development, false in production
+      merchant_id: merchantId,
+      return_url: `${window.location.origin}/payment-success`,
+      cancel_url: `${window.location.origin}/payment-failed`,
+      notify_url: `${backendUrl}/api/order/payhere-notify`,
+      order_id: orderId,
+      items: orderData.items.map(item => `${item.name} (${item.size})`).join(", "),
+      amount: orderData.amount,
+      currency: "LKR", // Replace with your currency if different
+      first_name: orderData.address.firstName,
+      last_name: orderData.address.lastName,
+      email: orderData.address.email,
+      phone: orderData.address.phone,
+      address: orderData.address.street,
+      city: orderData.address.city,
+      country: orderData.address.country,
+    };
+
+    // Create a form and submit it to PayHere
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = sandbox 
+      ? 'https://sandbox.payhere.lk/pay/checkout' 
+      : 'https://www.payhere.lk/pay/checkout';
+
+    // Create and append input fields for each parameter
+    Object.entries(paymentObject).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  };
 
   const onSubmitHandler = async(event) => {
     event.preventDefault();
@@ -46,13 +88,15 @@ const PlaceOrder = () => {
           }
         }
       }
-
+      
       let orderData = {
+        userId: localStorage.getItem('userId'), // Assuming you store userId in localStorage
         address: formData,
         items: orderItems,
-        amount: getCartAmount() + delivery_fee
+        amount: getCartAmount() + delivery_fee,
+        payment_method: method
       };
-
+      
       switch(method) {
         // API calls COD
         case 'cod':
@@ -67,53 +111,24 @@ const PlaceOrder = () => {
           }
           break;
 
-        // Payhere payment processing  
         case 'payhere':
-          // First, create a pending order and get order ID
-          const pendingOrder = await axios.post(
+          // First create an order with 'pending' status
+          const payhereResponse = await axios.post(
             backendUrl + '/api/order/create-pending', 
             orderData, 
             {headers: {token}}
           );
           
-          if(pendingOrder.data.success) {
-            // Initialize Payhere payment
-            const paymentData = pendingOrder.data.paymentData;
-            
-            // Make sure payhere.js is loaded
-            if (window.payhere) {
-              // Configure the payment
-              window.payhere.onCompleted = function onCompleted(orderId) {
-                // Payment completed
-                // Verify the payment on backend and update order status
-                axios.post(
-                  backendUrl + '/api/order/verify-payment',
-                  { orderId: paymentData.order_id },
-                  {headers: {token}}
-                ).then(response => {
-                  if(response.data.success) {
-                    toast.success("Payment completed successfully!");
-                    setCartItems({});
-                    navigate('/orders');
-                  }
-                });
-              };
-              
-              window.payhere.onDismissed = function onDismissed() {
-                toast.info("Payment dismissed");
-              };
-              
-              window.payhere.onError = function onError(error) {
-                toast.error("Payment error: " + error);
-              };
-              
-              // Initiate payment
-              window.payhere.startPayment(paymentData);
-            } else {
-              toast.error("Payment gateway not loaded. Please try again.");
-            }
+          if(payhereResponse.data.success) {
+            // Initiate PayHere payment with the order ID and merchant ID received from backend
+            initiatePayherePayment(
+              orderData, 
+              payhereResponse.data.orderId,
+              payhereResponse.data.merchantId,
+              payhereResponse.data.sandbox
+            );
           } else {
-            toast.error(pendingOrder.data.message || "Failed to create order");
+            toast.error(payhereResponse.data.message || 'Failed to create order');
           }
           break;
 
@@ -122,9 +137,9 @@ const PlaceOrder = () => {
       }
     } catch(error) {
       console.log(error);
-      toast.error("An error occurred while processing your order");
+      toast.error('Something went wrong. Please try again.');
     }
-  }
+  };
 
   return (
     <form onSubmit={onSubmitHandler} className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] px-4">
@@ -155,6 +170,7 @@ const PlaceOrder = () => {
       </div>
 
       {/* ---------- Right Side (Cart Totals) ---------- */}
+
       <div className="mt-8 w-full sm:max-w-[480px]">
         <div className="mt-8">
           <CartTotal />
@@ -164,7 +180,7 @@ const PlaceOrder = () => {
           <Title text1={"PAYMENT"} text2={"METHOD"} />
           {/*----Payment Method----*/}
           <div className="flex gap-3 flex-col lg:flex-row">
-            {/* Payhere Payment */}
+            {/* PayHere Payment */}
             <div
               onClick={() => setMethod("payhere")}
               className={`flex items-center gap-3 border p-2 px-3 cursor-pointer ${
@@ -176,7 +192,7 @@ const PlaceOrder = () => {
                   method === "payhere" ? "bg-green-400" : "bg-gray-300"
                 }`}
               ></p>
-              <p className="text-gray-500 text-sm font-medium mx-4">PAY WITH PAYHERE</p>
+              <p className="text-blue-600 text-sm font-medium mx-4">PAYHERE</p>
             </div>
 
             {/* Cash on Delivery (COD) */}
@@ -198,7 +214,7 @@ const PlaceOrder = () => {
 
         {/* ---- Place Order Button ---- */}
         <button type='submit' className="w-full mt-6 bg-black text-white py-3 rounded-md text-lg font-medium hover:bg-gray-800 transition">
-          Place Order
+          {method === 'payhere' ? 'Pay with PayHere' : 'Place Order'}
         </button>
       </div>
     </form>
