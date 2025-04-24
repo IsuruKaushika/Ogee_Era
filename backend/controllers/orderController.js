@@ -23,6 +23,7 @@ const placeOrder = async(req, res) => {
             paymentMethod: "COD",
             payment: false,
             date: Date.now()
+            
         }
 
         const newOrder = new orderModel(orderData)
@@ -37,6 +38,7 @@ const placeOrder = async(req, res) => {
     }
 }
 
+// Creating pending order for Payhere payment
 // Creating pending order for Payhere payment
 const createPendingOrder = async(req, res) => {
     try {
@@ -56,12 +58,36 @@ const createPendingOrder = async(req, res) => {
         const newOrder = new orderModel(orderData)
         await newOrder.save()
 
-        // Return order ID and PayHere merchant ID for frontend processing
+        // Generate the PayHere hash following their specifications
+        // First hash the merchant secret
+        const hashedSecret = crypto
+            .createHash('md5')
+            .update(PAYHERE_MERCHANT_SECRET)
+            .digest('hex')
+            .toUpperCase();
+        
+        // Format amount to ensure it has 2 decimal places
+        const amountFormatted = parseFloat(amount)
+            .toLocaleString('en-us', { minimumFractionDigits: 2 })
+            .replaceAll(',', '');
+        
+        const currency = 'LKR'; // Set your default currency
+        
+        // Create the final hash
+        const hash = crypto
+            .createHash('md5')
+            .update(PAYHERE_MERCHANT_ID + newOrder._id + amountFormatted + currency + hashedSecret)
+            .digest('hex')
+            .toUpperCase();
+
+        // Return order ID, PayHere merchant ID, and hash for frontend processing
         res.json({
             success: true, 
             message: "Order Created Successfully",
             orderId: newOrder._id,
             merchantId: PAYHERE_MERCHANT_ID,
+            hash: hash,
+            currency: currency,
             sandbox: PAYHERE_SANDBOX
         })
     } catch(error) {
@@ -69,15 +95,26 @@ const createPendingOrder = async(req, res) => {
         res.json({success: false, message: error.message})
     }
 }
-
 // Validate PayHere hash
 const validatePayhereHash = (data, hash) => {
-    // Create the message string according to PayHere documentation
-    const message = `${data.merchant_id}${data.order_id}${data.payhere_amount}${data.payhere_currency}${data.status_code}`;
+    // First hash the merchant secret
+    const hashedSecret = crypto
+        .createHash('md5')
+        .update(PAYHERE_MERCHANT_SECRET)
+        .digest('hex')
+        .toUpperCase();
     
-    // Create the hash using the merchant secret
+    // Format amount to ensure it has 2 decimal places
+    const amountFormatted = parseFloat(data.payhere_amount)
+        .toLocaleString('en-us', { minimumFractionDigits: 2 })
+        .replaceAll(',', '');
+    
+    // Create the message string according to PayHere documentation
+    const message = data.merchant_id + data.order_id + amountFormatted + data.payhere_currency + hashedSecret;
+    
+    // Create the hash using MD5
     const calculatedHash = crypto
-        .createHmac('md5', PAYHERE_MERCHANT_SECRET)
+        .createHash('md5')
         .update(message)
         .digest('hex')
         .toUpperCase();
@@ -85,7 +122,6 @@ const validatePayhereHash = (data, hash) => {
     // Compare the calculated hash with the received hash
     return calculatedHash === hash;
 };
-
 // Handle PayHere payment notification
 const payhereNotify = async(req, res) => {
     try {

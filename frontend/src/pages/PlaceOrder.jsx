@@ -1,11 +1,12 @@
 import React, { useContext, useState } from "react";
-
 import Title from "../components/Title";
 import CartTotal from "../components/CartTotal";
 import { assets } from "../assets/assets";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
+// Add this import for MD5 hashing if needed for any client-side verification
+import md5 from 'crypto-js/md5';
 
 const PlaceOrder = () => {
   const [method, setMethod] = useState("cod");
@@ -30,16 +31,7 @@ const PlaceOrder = () => {
     setFormData(data => ({...data, [name]: value}));
   };
 
-  const initiatePayherePayment = (orderData, orderId, merchantId, sandbox) => {
-    // Create a PayHere payment object
-    const hash = md5(
-      merchantId +
-      orderId +
-      orderData.amount +
-      "LKR" +
-      md5(process.env.REACT_APP_MERCHANT_SECRET).toUpperCase()
-    ).toUpperCase();
-
+  const initiatePayherePayment = (orderData, orderId, merchantId, sandbox, hash) => {
     const paymentObject = {
       sandbox: sandbox, // Will be true in development, false in production
       merchant_id: merchantId,
@@ -57,6 +49,7 @@ const PlaceOrder = () => {
       address: orderData.address.street,
       city: orderData.address.city,
       country: orderData.address.country,
+      hash: hash // Hash from backend
     };
 
     // Create a form and submit it to PayHere
@@ -128,12 +121,13 @@ const PlaceOrder = () => {
           );
           
           if(payhereResponse.data.success) {
-            // Initiate PayHere payment with the order ID and merchant ID received from backend
+            // Initiate PayHere payment with the order ID, merchant ID, and hash received from backend
             initiatePayherePayment(
               orderData, 
               payhereResponse.data.orderId,
               payhereResponse.data.merchantId,
-              payhereResponse.data.sandbox
+              payhereResponse.data.sandbox,
+              payhereResponse.data.hash // Pass the hash from backend
             );
           } else {
             toast.error(payhereResponse.data.message || 'Failed to create order');
