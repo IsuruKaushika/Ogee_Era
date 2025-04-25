@@ -14,6 +14,7 @@ import Login from './pages/Login'
 import About from './pages/About'
 import PaymentSuccess from './pages/PaymentSuccess'
 import PaymentFailed from './pages/PaymentFail'
+import WhatsAppFloat from './components/WhatsappFloat'
 
 import {ToastContainer,toast} from 'react-toastify'//used for notifications
 import 'react-toastify/dist/ReactToastify.css'
@@ -41,6 +42,8 @@ const App = () => {
         <Route path='/payment-failed' element={<PaymentFailed/>} />
                 
       </Routes>
+      <WhatsAppFloat />
+
        <Footer/>
     
     
