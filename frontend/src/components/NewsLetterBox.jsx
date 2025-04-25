@@ -51,7 +51,6 @@ const NewsLetterBox = () => {
         />
         <button type='submit' className='bg-black text-white text-xs px-10 py-4'>SUBSCRIBE</button>
       </form>
-
       {status && <p className='text-sm text-green-600 mt-2'>{status}</p>}
       {error && <p className='text-sm text-red-600 mt-2'>{error}</p>}
     </div>
