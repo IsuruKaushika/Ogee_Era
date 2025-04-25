@@ -156,7 +156,6 @@ const payhereNotify = async(req, res) => {
             
             // Clear cart after successful payment
             await userModel.findByIdAndUpdate(order.userId, {cartData: {}});
-            console.log("Order updated successfully", order_id, payment_id, req.body);
             
             return res.json({success: true, message: 'Payment verified and order updated'});
         } else {
@@ -176,22 +175,10 @@ const payhereNotify = async(req, res) => {
 }
 
 // Handle PayHere success return
-        
-
 const payhereSuccess = async(req, res) => {
-    
-
-
-    
     try {
         // This endpoint is for user redirect after payment
         // Redirect to orders page or success page
-        const { order_id } = req.body;
-        console.log("Payhere Success", req.body);
-        const order = await orderModel.findById(order_id);
-        await userModel.findByIdAndUpdate(order.userId, {cartData: {}});
-
-        
         res.json({success: true, message: "Payment completed successfully"});
         
 
