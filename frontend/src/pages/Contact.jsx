@@ -209,19 +209,19 @@ const Contact = () => {
               <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className='font-semibold text-xl text-gray-800 border-b pb-3 mb-4'>Connect With Us</h2>
             <div className="flex gap-4">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="bg-gray-100 p-3 rounded-full hover:bg-blue-100 transition-colors">
+              <a href="https://www.facebook.com/share/1BZtCgfBgd/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="bg-gray-100 p-3 rounded-full hover:bg-blue-100 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700">
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
                 </svg>
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="bg-gray-100 p-3 rounded-full hover:bg-pink-100 transition-colors">
+              <a href="https://www.instagram.com/ogee_era?igsh=MTI0aG94cG5rMGQxMA==" target="_blank" rel="noopener noreferrer" className="bg-gray-100 p-3 rounded-full hover:bg-pink-100 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                 </svg>
               </a>
-              <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="bg-gray-100 p-3 rounded-full hover:bg-gray-200 transition-colors">
+              <a href="https://www.tiktok.com/@0gee_era?_t=ZS-8vqiO4zOGkK&_r=1" target="_blank" rel="noopener noreferrer" className="bg-gray-100 p-3 rounded-full hover:bg-gray-200 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700">
                   <path d="M9 12a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path>
                   <path d="M15 8h.01"></path>
