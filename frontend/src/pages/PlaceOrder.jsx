@@ -197,7 +197,7 @@ const PlaceOrder = () => {
                   method === "payhere" ? "bg-green-400" : "bg-gray-300"
                 }`}
               ></p>
-              <p className="text-blue-600 text-sm font-medium mx-4">PAYHERE</p>
+              <p className="text-blue-600 text-sm font-medium mx-4">CARD PAYMENT</p>
             </div>
 
             {/* Cash on Delivery (COD) */}
@@ -219,7 +219,7 @@ const PlaceOrder = () => {
 
         {/* ---- Place Order Button ---- */}
         <button type='submit' className="w-full mt-6 bg-black text-white py-3 rounded-md text-lg font-medium hover:bg-gray-800 transition">
-          {method === 'payhere' ? 'Pay with PayHere' : 'Place Order'}
+          {method === 'payhere' ? 'Pay Now' : 'Place Order'}
         </button>
       </div>
     </form>
