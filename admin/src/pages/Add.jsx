@@ -109,7 +109,7 @@ const Add = ({ token }) => {
       // Check file size and compress if needed
       const fileSize = file.size / 1024 / 1024; // size in MB
       
-      if (fileSize > 9.5) {
+      if (fileSize > 1) {
         toast.info(`Optimizing image (${fileSize.toFixed(2)}MB) to meet size requirements...`);
         const compressedFile = await compressImage(file);
         const compressedSize = compressedFile.size / 1024 / 1024;
