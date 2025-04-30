@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
-import { assets } from '../assets/assets';
-import axios from 'axios';
-import { backendUrl } from '../App';
-import { toast } from 'react-toastify';
+import React, { useState } from 'react'
+import { assets } from '../assets/assets'
+import axios from 'axios'
+import { backendUrl } from '../App'
+import { toast } from 'react-toastify'
 
-// Enhanced image processing function - standardizes dimensions and optimizes file size
-const processImage = async (file, targetWidth = 1200, targetHeight = 1200, maxSizeMB = 5) => {
+// Image compression helper function
+const compressImage = async (file, maxSizeMB = 9.5) => {
+  // Return original file if already under the size limit
+  if (file.size / 1024 / 1024 < maxSizeMB) {
+    return file;
+  }
+  
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -14,62 +19,50 @@ const processImage = async (file, targetWidth = 1200, targetHeight = 1200, maxSi
       img.src = event.target.result;
       
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // Calculate dimensions to maintain aspect ratio
-        let sourceX = 0, sourceY = 0, sourceWidth = img.width, sourceHeight = img.height;
-        
-        // Crop the image to square (center crop)
-        if (img.width > img.height) {
-          // Wide image
-          sourceX = (img.width - img.height) / 2;
-          sourceWidth = img.height;
-        } else {
-          // Tall image
-          sourceY = (img.height - img.width) / 2;
-          sourceHeight = img.width;
-        }
-        
-        // Draw image with white background to ensure consistent format
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, targetWidth, targetHeight);
-        
-        // Draw cropped image on the canvas
-        ctx.drawImage(
-          img,
-          sourceX, sourceY,
-          sourceWidth, sourceHeight,
-          0, 0,
-          targetWidth, targetHeight
-        );
-        
-        // Determine quality based on original size
+        // Calculate scaling factor to get below max size
+        const originalSize = file.size / 1024 / 1024; // size in MB
         let quality = 0.9; // Start with high quality
-        const originalSize = file.size / 1024 / 1024;
         
-        if (originalSize > 8) {
+        // Decrease quality for very large images
+        if (originalSize > 20) {
           quality = 0.7;
-        } else if (originalSize > 5) {
+        } else if (originalSize > 15) {
           quality = 0.8;
         }
         
-        // Convert to blob with appropriate quality setting
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // If image is extremely large, reduce dimensions
+        const MAX_DIMENSION = 4000; // Set reasonable max dimension
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+          const aspectRatio = width / height;
+          if (width > height) {
+            width = MAX_DIMENSION;
+            height = width / aspectRatio;
+          } else {
+            height = MAX_DIMENSION;
+            width = height * aspectRatio;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to blob
         canvas.toBlob((blob) => {
+          // Create new file from blob
           const newFile = new File([blob], file.name, {
-            type: 'image/jpeg', // Force JPEG format for consistency
+            type: file.type,
             lastModified: Date.now(),
           });
           
-          // Log file information
-          console.log(`Image processed: ${file.name}`);
-          console.log(`Original: ${(file.size / 1024 / 1024).toFixed(2)}MB, New: ${(newFile.size / 1024 / 1024).toFixed(2)}MB`);
-          console.log(`Dimensions: ${targetWidth}x${targetHeight}`);
-          
           resolve(newFile);
-        }, 'image/jpeg', quality);
+        }, file.type, quality);
       };
     };
   });
@@ -81,7 +74,7 @@ const Add = ({ token }) => {
   const [image3, setImage3] = useState(false);
   const [image4, setImage4] = useState(false);
   
-  // Track original and processed images for display
+  // Track original and compressed images for display
   const [displayImages, setDisplayImages] = useState({
     image1: null,
     image2: null,
@@ -89,8 +82,8 @@ const Add = ({ token }) => {
     image4: null
   });
   
-  // Track if processing is in progress
-  const [processing, setProcessing] = useState(false);
+  // Track if compression is in progress
+  const [compressing, setCompressing] = useState(false);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -100,42 +93,37 @@ const Add = ({ token }) => {
   const [sizes, setSizes] = useState([]);
   const [bestseller, setBestseller] = useState(false);
 
-  // Handle image selection with standardized processing
+  // Handle image selection with compression if needed
   const handleImageSelect = async (e, setImageFunction, imageKey) => {
     const file = e.target.files[0];
     if (!file) return;
     
+    // Store the original file URL for preview
+    setDisplayImages(prev => ({
+      ...prev,
+      [imageKey]: URL.createObjectURL(file)
+    }));
+    
     try {
-      setProcessing(true);
-      
-      // Store the original file URL for preview
-      setDisplayImages(prev => ({
-        ...prev,
-        [imageKey]: URL.createObjectURL(file)
-      }));
-      
-      // Process all images regardless of size to ensure consistency
+      setCompressing(true);
+      // Check file size and compress if needed
       const fileSize = file.size / 1024 / 1024; // size in MB
-      toast.info(`Processing image (${fileSize.toFixed(2)}MB)...`);
       
-      // Standard size for all product images (1200x1200 pixels)
-      const processedFile = await processImage(file, 1200, 1200);
-      const processedSize = processedFile.size / 1024 / 1024;
-      
-      setImageFunction(processedFile);
-      
-      // Update display image to show processed version
-      setDisplayImages(prev => ({
-        ...prev,
-        [imageKey]: URL.createObjectURL(processedFile)
-      }));
-      
-      toast.success(`Image processed: ${fileSize.toFixed(2)}MB → ${processedSize.toFixed(2)}MB`);
+      if (fileSize > 9.5) {
+        toast.info(`Optimizing image (${fileSize.toFixed(2)}MB) to meet size requirements...`);
+        const compressedFile = await compressImage(file);
+        const compressedSize = compressedFile.size / 1024 / 1024;
+        
+        setImageFunction(compressedFile);
+        toast.success(`Image optimized: ${fileSize.toFixed(2)}MB → ${compressedSize.toFixed(2)}MB`);
+      } else {
+        setImageFunction(file);
+      }
     } catch (error) {
       console.error("Error processing image:", error);
       toast.error("Failed to process image. Please try another one.");
     } finally {
-      setProcessing(false);
+      setCompressing(false);
     }
   };
 
@@ -152,13 +140,6 @@ const Add = ({ token }) => {
       formData.append('sizes', JSON.stringify(sizes));
       formData.append('bestseller', bestseller);
 
-      // Validate that at least one image is provided
-      if (!image1 && !image2 && !image3 && !image4) {
-        toast.error("Please upload at least one product image");
-        return;
-      }
-
-      // Append images to form data
       image1 && formData.append('image1', image1);
       image2 && formData.append('image2', image2);
       image3 && formData.append('image3', image3);
@@ -167,14 +148,7 @@ const Add = ({ token }) => {
       // Show loading message
       const toastId = toast.loading("Adding product...");
       
-      const response = await axios.post(backendUrl + "/api/product/add", formData, { 
-        headers: { 
-          token,
-          'Content-Type': 'multipart/form-data'
-        },
-        // Add timeout and retry logic
-        timeout: 30000
-      });
+      const response = await axios.post(backendUrl + "/api/product/add", formData, { headers: { token } });
       
       // Update toast message based on response
       if (response.data.success) {
@@ -210,17 +184,17 @@ const Add = ({ token }) => {
         });
       }
     } catch (error) {
-      console.error("Error submitting product:", error);
-      toast.error(error.response?.data?.message || error.message || "Failed to add product");
+      console.log(error);
+      toast.error(error.message || "Failed to add product");
     }
   };
 
   return (
     <form onSubmit={onSubmitHandler} className='flex flex-col w-full items-start gap-3'>
       <div>
-        <p className='mb-2'>Upload Image{processing && ' (Processing...)' }</p>
+        <p className='mb-2'>Upload Image{compressing && ' (Processing...)' }</p>
         <div className='flex gap-2'>
-          <label htmlFor="image1" className={`relative ${processing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+          <label htmlFor="image1" className={`relative ${compressing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             <img 
               className='w-20 h-20 object-cover border' 
               src={displayImages.image1 || assets.upload_area} 
@@ -230,12 +204,12 @@ const Add = ({ token }) => {
               onChange={(e) => handleImageSelect(e, setImage1, 'image1')} 
               type="file" 
               id="image1" 
-              disabled={processing}
+              disabled={compressing}
               hidden 
               accept="image/*"
             />
           </label>
-          <label htmlFor="image2" className={`relative ${processing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+          <label htmlFor="image2" className={`relative ${compressing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             <img 
               className='w-20 h-20 object-cover border' 
               src={displayImages.image2 || assets.upload_area} 
@@ -245,12 +219,12 @@ const Add = ({ token }) => {
               onChange={(e) => handleImageSelect(e, setImage2, 'image2')} 
               type="file" 
               id="image2" 
-              disabled={processing}
+              disabled={compressing}
               hidden 
               accept="image/*"
             />
           </label>
-          <label htmlFor="image3" className={`relative ${processing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+          <label htmlFor="image3" className={`relative ${compressing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             <img 
               className='w-20 h-20 object-cover border' 
               src={displayImages.image3 || assets.upload_area} 
@@ -260,12 +234,12 @@ const Add = ({ token }) => {
               onChange={(e) => handleImageSelect(e, setImage3, 'image3')} 
               type="file" 
               id="image3" 
-              disabled={processing}
+              disabled={compressing}
               hidden 
               accept="image/*"
             />
           </label>
-          <label htmlFor="image4" className={`relative ${processing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+          <label htmlFor="image4" className={`relative ${compressing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             <img 
               className='w-20 h-20 object-cover border' 
               src={displayImages.image4 || assets.upload_area} 
@@ -275,18 +249,15 @@ const Add = ({ token }) => {
               onChange={(e) => handleImageSelect(e, setImage4, 'image4')} 
               type="file" 
               id="image4" 
-              disabled={processing}
+              disabled={compressing}
               hidden 
               accept="image/*"
             />
           </label>
         </div>
-        {processing && (
+        {compressing && (
           <p className="text-sm text-blue-600 mt-1">Processing image, please wait...</p>
         )}
-        <p className="text-xs text-gray-600 mt-1">
-          All images will be standardized to 1200x1200px square format
-        </p>
       </div>
       <div className='w-full'>
         <p>Product Name</p>
@@ -349,9 +320,9 @@ const Add = ({ token }) => {
       <button 
         type="submit" 
         className='w-28 py-3 mt-4 bg-black text-white disabled:bg-gray-400'
-        disabled={processing}
+        disabled={compressing}
       >
-        {processing ? 'Processing...' : 'ADD'}
+        {compressing ? 'Processing...' : 'ADD'}
       </button>
     </form>
   );
