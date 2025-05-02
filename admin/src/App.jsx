@@ -8,6 +8,8 @@ import {ToastContainer} from 'react-toastify'
 import Add from './pages/Add'
 import List from './pages/List'
 import Orders from './pages/Orders'
+import Edit from './pages/Edit';
+
 import Login from './components/Login'
 import { useState } from 'react'
 import { useEffect } from 'react';
@@ -41,6 +43,9 @@ const App = () => {
             <Route path ="/add" element={<Add token={token}/>} />
             <Route path ="/list" element={<List token={token}/>} />
             <Route path ="/orders" element={<Orders token={token}/>} />
+            <Route path ="/edit/:id" element={<Edit token={token}/>} />
+
+          
   
           </Routes>
         </div>

@@ -50,17 +50,18 @@ const addProduct =async(req,res)=>{
 }
 
 //list product
-const listProducts =async(req,res)=>{
-    try{
-        const products =await productModel.find({})
-        res.json({success:true,products})
+// List products sorted by most recent
+const listProducts = async (req, res) => {
+    try {
+        const products = await productModel.find({}).sort({ createdAt: 1 }); // Latest first
+        res.json({ success: true, products });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
     }
-    catch(error){
-        console.log(error)
-        res.json({success:false,message:error.message})
-    }
+};
 
-}
+  
 
 //function remove Product
 const removeProduct =async(req,res)=>{

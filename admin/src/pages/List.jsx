@@ -72,7 +72,7 @@ const List = ({ token }) => {
               
               {/* Edit Button */}
               <p className='text-right md:text-center cursor-pointer text-blue-500 text-lg'>
-                <Link to={`/edit-product/${item._id}`}>
+                <Link to={`/edit/${item._id}`}>
                   <span className="hidden md:inline">Edit</span>
                   <span className="md:hidden">✏️</span>
                 </Link>

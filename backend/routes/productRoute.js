@@ -9,4 +9,9 @@ productRouter.post('/remove',adminAuth,removeProduct);
 productRouter.post('/single',singleProduct);
 productRouter.get('/list',listProducts);
 
+productRouter.get('/:id',singleProduct);
+
+
+  
+
 export default productRouter;
