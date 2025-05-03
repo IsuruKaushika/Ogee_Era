@@ -15,6 +15,7 @@ import About from './pages/About'
 import PaymentSuccess from './pages/PaymentSuccess'
 import PaymentFailed from './pages/PaymentFail'
 import WhatsAppFloat from './components/WhatsappFloat'
+import Terms from './pages/Terms'
 
 import {ToastContainer,toast} from 'react-toastify'//used for notifications
 import 'react-toastify/dist/ReactToastify.css'
@@ -40,6 +41,7 @@ const App = () => {
         <Route path='/orders' element={<Orders/>} />
         <Route path='/payment-success' element={<PaymentSuccess/>} />
         <Route path='/payment-failed' element={<PaymentFailed/>} />
+        <Route path='/terms' element={<Terms/>} />
                 
       </Routes>
       <WhatsAppFloat />
