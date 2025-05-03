@@ -41,7 +41,7 @@ const App = () => {
         <Route path='/orders' element={<Orders/>} />
         <Route path='/payment-success' element={<PaymentSuccess/>} />
         <Route path='/payment-failed' element={<PaymentFailed/>} />
-        <Route path='/terms' element={<Terms/>} />
+        <Route path='/terms-and-conditions' element={<Terms/>} />
                 
       </Routes>
       <WhatsAppFloat />
