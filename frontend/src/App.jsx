@@ -16,9 +16,11 @@ import PaymentSuccess from './pages/PaymentSuccess'
 import PaymentFailed from './pages/PaymentFail'
 import WhatsAppFloat from './components/WhatsappFloat'
 import Terms from './pages/Terms'
+import privacy from './pages/Policy'
 
 import {ToastContainer,toast} from 'react-toastify'//used for notifications
 import 'react-toastify/dist/ReactToastify.css'
+import Policy from './pages/Policy'
 
 
 
@@ -42,6 +44,7 @@ const App = () => {
         <Route path='/payment-success' element={<PaymentSuccess/>} />
         <Route path='/payment-failed' element={<PaymentFailed/>} />
         <Route path='/terms-and-conditions' element={<Terms/>} />
+        <Route path='/privacy-and-policy' element={<Policy/>} />
                 
       </Routes>
       <WhatsAppFloat />
