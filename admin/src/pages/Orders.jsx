@@ -103,7 +103,7 @@ const Orders = ({ token }) => {
               className="w-full p-2 border border-gray-300 rounded-md"
             >
               <option value="">All Payment Methods</option>
-              <option value="Cash on Delivery">Cash on Delivery</option>
+              <option value="COD">Cash on Delivery</option>
               <option value="Payhere">Payhere</option>
             </select>
           </div>
