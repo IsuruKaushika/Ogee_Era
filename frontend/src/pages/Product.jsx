@@ -83,32 +83,39 @@ const Product = () => {
           {/* Display stock status here */}
           {renderStockStatus()}
           
-          <p className='mt-5 text-gray-500 md:w-4/5'>{productData.description}</p>
+          <p className='mt-5 mb-8 text-gray-500 md:w-4/5'>{productData.description}</p>
           
-          <div className='flex flex-col gap-4 my-8'>
-            <div className="flex justify-between items-center">
-              <p>Select Size</p>
-              {productData.sizeChart && (
-                <button 
-                  onClick={toggleSizeChart} 
-                  className="text-blue-600 text-sm underline"
-                >
-                  Size Chart
-                </button>
-              )}
+          {/* Size Table - Only display if available */}
+          {productData.sizeChart && (
+            <div className="mt-5">
+              <h3 className="font-medium mb-2">Size Table</h3>
+              <img 
+                src={productData.sizeChart} 
+                alt="Size Table" 
+                className="w-full max-w-md h-auto"
+              />
             </div>
-            <div className='flex gap-2'>
-              {productData.sizes.map((item, index) => (
-                <button 
-                  onClick={() => setSize(item)} 
-                  className={`border py-2 px-4 bg-gray-100 ${item === size ? 'border-orange-500' : ''}`} 
-                  key={index}
-                >
-                  {item}
-                </button>
-              ))}
+          )}
+          
+          {/* Only show size selection if sizes array has items */}
+          {productData.sizes && productData.sizes.length > 0 && (
+            <div className='flex flex-col gap-4 my-8'>
+              <div className="flex justify-between items-center">
+                <p>Select Size</p>
+              </div>
+              <div className='flex gap-2'>
+                {productData.sizes.map((item, index) => (
+                  <button 
+                    onClick={() => setSize(item)} 
+                    className={`border py-2 px-4 bg-gray-100 ${item === size ? 'border-orange-500' : ''}`} 
+                    key={index}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           
           {/* Disable Add to Cart button if out of stock */}
           <button 
@@ -117,7 +124,7 @@ const Product = () => {
               productData.stockStatus === 'Out of Stock' 
                 ? 'bg-gray-400 cursor-not-allowed' 
                 : 'bg-black active:bg-gray-700'
-            } text-white px-8 py-3 text-sm`}
+            } text-white px-8 py-3 text-sm mt-6`}
             disabled={productData.stockStatus === 'Out of Stock'}
           >
             {productData.stockStatus === 'Out of Stock' ? 'OUT OF STOCK' : 'ADD TO CART'}
