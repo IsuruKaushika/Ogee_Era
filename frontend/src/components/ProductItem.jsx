@@ -3,22 +3,44 @@ import { Link } from 'react-router-dom'
 import { ShopContext } from '../context/ShopContext';
 import { useContext } from 'react';
 
-
-
-
-const ProductItem = ({id,image,name,price}) => {
+const ProductItem = ({id, image, name, price, stockStatus}) => {
     const {currency} = useContext(ShopContext);
 
-  return (
-    <Link className='text-gray-700 cursor-pointer' to={`/product/${id}`}>
-        <div className='overflow-hidden'>
-            <img className='hover:scale-110 transition ease-in-out' src={image[0]} alt=" "/>
-        </div>
-        <p className='pt-3 pb-1 text-sm'> {name}</p> 
-        <p className='text-sm font-medium'>{currency}{price}</p>
-    </Link>
+    // Function to determine stock status styling
+    const getStockStatusStyle = () => {
+        switch(stockStatus) {
+            case 'In Stock':
+                return 'text-green-600';
+            case 'Out of Stock':
+                return 'text-red-600';
+            case 'Limited Stock':
+                return 'text-orange-500';
+            default:
+                return 'text-green-600'; // Default to in stock if not specified
+        }
+    };
 
-  )
+    return (
+        <Link className='text-gray-700 cursor-pointer' to={`/product/${id}`}>
+            <div className='overflow-hidden relative'>
+                <img className='hover:scale-110 transition ease-in-out' src={image[0]} alt=" "/>
+                {stockStatus === 'Out of Stock' && (
+                    <div className='absolute top-0 right-0 bg-red-500 text-white px-2 py-1 text-xs'>
+                        Out of Stock
+                    </div>
+                )}
+            </div>
+            <div className='flex justify-between items-center pt-3 pb-1'>
+                <p className='text-sm'>{name}</p>
+                {stockStatus && (
+                    <span className={`text-xs font-medium ${getStockStatusStyle()}`}>
+                        {stockStatus !== 'Out of Stock' ? stockStatus : ''}
+                    </span>
+                )}
+            </div>
+            <p className='text-sm font-medium'>{currency}{price}</p>
+        </Link>
+    )
 }
 
 export default ProductItem

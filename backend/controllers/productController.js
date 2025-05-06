@@ -4,12 +4,22 @@ import productModel from "../models/productModel.js"
 //add product
 const addProduct = async(req, res) => {
     try {
-        const {name, description, price, category, subCategory, sizes, bestseller} = req.body;
+        const {
+            name, 
+            description, 
+            price, 
+            category, 
+            subCategory, 
+            sizes, 
+            bestseller,
+            stockStatus // New field
+        } = req.body;
 
         const image1 = req.files.image1 && req.files.image1[0]
         const image2 = req.files.image2 && req.files.image2[0]
         const image3 = req.files.image3 && req.files.image3[0]
         const image4 = req.files.image4 && req.files.image4[0]
+        const sizeChartImage = req.files.sizeChart && req.files.sizeChart[0] // New file field
 
         const images = [image1, image2, image3, image4].filter((item) => item !== undefined)
 
@@ -20,6 +30,13 @@ const addProduct = async(req, res) => {
             })
         )
 
+        // Upload size chart image if provided
+        let sizeChartUrl = null;
+        if (sizeChartImage) {
+            const result = await cloudinary.uploader.upload(sizeChartImage.path, {resource_type: 'image'});
+            sizeChartUrl = result.secure_url;
+        }
+
         const productData = {
             name,
             description,
@@ -29,7 +46,9 @@ const addProduct = async(req, res) => {
             sizes: JSON.parse(sizes),
             bestseller: bestseller === "true" ? true : false,
             image: imagesUrl,
-            date: Date.now()
+            date: Date.now(),
+            stockStatus: stockStatus || 'In Stock', // Set default if not provided
+            sizeChart: sizeChartUrl // Add size chart URL
         }
         console.log(productData)
 
@@ -79,4 +98,30 @@ const singleProduct = async(req, res) => {
     }
 }
 
-export {singleProduct, removeProduct, listProducts, addProduct}
+// Update product stock status
+const updateStockStatus = async(req, res) => {
+    try {
+        const { productId, stockStatus } = req.body
+        
+        if (!['In Stock', 'Out of Stock', 'Limited Stock'].includes(stockStatus)) {
+            return res.json({ 
+                success: false, 
+                message: "Invalid stock status. Must be 'In Stock', 'Out of Stock', or 'Limited Stock'" 
+            })
+        }
+        
+        await productModel.findByIdAndUpdate(productId, { stockStatus })
+        res.json({ success: true, message: "Stock status updated successfully" })
+    } catch(error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+export {
+    singleProduct, 
+    removeProduct, 
+    listProducts, 
+    addProduct,
+    updateStockStatus // New function export
+}

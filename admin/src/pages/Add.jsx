@@ -73,13 +73,15 @@ const Add = ({ token }) => {
   const [image2, setImage2] = useState(false);
   const [image3, setImage3] = useState(false);
   const [image4, setImage4] = useState(false);
+  const [sizeChart, setSizeChart] = useState(false);
   
   // Track original and compressed images for display
   const [displayImages, setDisplayImages] = useState({
     image1: null,
     image2: null,
     image3: null,
-    image4: null
+    image4: null,
+    sizeChart: null
   });
   
   // Track if compression is in progress
@@ -92,6 +94,7 @@ const Add = ({ token }) => {
   const [price, setPrice] = useState('');
   const [sizes, setSizes] = useState([]);
   const [bestseller, setBestseller] = useState(false);
+  const [hasSizeChart, setHasSizeChart] = useState(false);
 
   // Handle image selection with compression if needed
   const handleImageSelect = async (e, setImageFunction, imageKey) => {
@@ -139,11 +142,13 @@ const Add = ({ token }) => {
       formData.append('price', price);
       formData.append('sizes', JSON.stringify(sizes));
       formData.append('bestseller', bestseller);
+      formData.append('hasSizeChart', hasSizeChart);
 
       image1 && formData.append('image1', image1);
       image2 && formData.append('image2', image2);
       image3 && formData.append('image3', image3);
       image4 && formData.append('image4', image4);
+      sizeChart && formData.append('sizeChart', sizeChart);
 
       // Show loading message
       const toastId = toast.loading("Adding product...");
@@ -167,14 +172,17 @@ const Add = ({ token }) => {
         setImage2(false);
         setImage3(false);
         setImage4(false);
+        setSizeChart(false);
         setDisplayImages({
           image1: null,
           image2: null,
           image3: null,
-          image4: null
+          image4: null,
+          sizeChart: null
         });
         setSizes([]);
         setBestseller(false);
+        setHasSizeChart(false);
       } else {
         toast.update(toastId, { 
           render: response.data.message, 
@@ -186,6 +194,27 @@ const Add = ({ token }) => {
     } catch (error) {
       console.log(error);
       toast.error(error.message || "Failed to add product");
+    }
+  };
+
+  // Toggle size chart option
+  const toggleSizeChart = () => {
+    setHasSizeChart(prev => !prev);
+    if (!hasSizeChart) {
+      // Focus on size chart upload when enabled
+      setTimeout(() => {
+        const sizeChartInput = document.getElementById('sizeChart');
+        if (sizeChartInput) {
+          sizeChartInput.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      // Clear size chart when toggled off
+      setSizeChart(false);
+      setDisplayImages(prev => ({
+        ...prev,
+        sizeChart: null
+      }));
     }
   };
 
@@ -312,6 +341,48 @@ const Add = ({ token }) => {
         </div>
       </div>
 
+      {/* Size Chart Toggle */}
+      <div className='flex gap-2 mt-2'>
+        <input 
+          onChange={toggleSizeChart} 
+          checked={hasSizeChart} 
+          type="checkbox" 
+          id='hasSizeChart' 
+        />
+        <label className='cursor-pointer' htmlFor='hasSizeChart'>Add Size Chart</label>
+      </div>
+
+      {/* Size Chart Upload Section - Only visible when hasSizeChart is true */}
+      {hasSizeChart && (
+        <div className='mt-2 w-full max-w-[500px]'>
+          <p className='mb-2'>Upload Size Chart</p>
+          <div className='flex items-center gap-3'>
+            <label htmlFor="sizeChart" className={`relative ${compressing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+              <img 
+                className='w-32 h-32 object-contain border p-1' 
+                src={displayImages.sizeChart || assets.upload_area} 
+                alt='Size Chart'
+              />
+              <input 
+                onChange={(e) => handleImageSelect(e, setSizeChart, 'sizeChart')} 
+                type="file" 
+                id="sizeChart" 
+                disabled={compressing}
+                hidden 
+                accept="image/*"
+              />
+            </label>
+            <div className='text-sm text-gray-600'>
+              {displayImages.sizeChart ? (
+                <p className='text-green-600'>Size chart uploaded</p>
+              ) : (
+                <p>Upload a clear image of your product's size chart</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className='flex gap-2 mt-2'>
         <input onChange={() => setBestseller(prev => !prev)} checked={bestseller} type="checkbox" id='bestseller' />
         <label className='cursor-pointer' htmlFor='bestseller'>Add to BestSeller</label>
@@ -320,7 +391,7 @@ const Add = ({ token }) => {
       <button 
         type="submit" 
         className='w-28 py-3 mt-4 bg-black text-white disabled:bg-gray-400'
-        disabled={compressing}
+        disabled={compressing || (hasSizeChart && !sizeChart)}
       >
         {compressing ? 'Processing...' : 'ADD'}
       </button>
