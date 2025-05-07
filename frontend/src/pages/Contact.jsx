@@ -82,7 +82,7 @@ const Contact = () => {
                 </svg>
                 <p className='text-gray-600'>
                   <span className='font-medium'>Phone:</span><br />
-                  +94 703014670
+                  +94 712205395
                 </p>
               </div>
               

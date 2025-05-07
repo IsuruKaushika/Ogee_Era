@@ -304,15 +304,18 @@ const Add = ({ token }) => {
             <option value='Men'>Men</option>
             <option value='Women'>Women</option>
             <option value='Kids'>Kids</option>
+            <option value='None'>None</option>
           </select>
         </div>
 
         <div>
           <p className='mb-2'>Product SubCategory</p>
           <select onChange={(e) => setSubCategory(e.target.value)} value={subCategory} className='w-full max-w-[500px] px-3 py-2' required>
-            <option value='TopWear'>TopWear</option>
-            <option value='BottomWear'>BottomWear</option>
-            <option value='WinterWear'>WinterWear</option>
+            <option value='Saree'>Saree</option>
+            <option value='Tops'>Tops</option>
+            <option value='Dress'>Dress</option>
+            <option value='Lungi&Sarong'>Lungi & Sarong</option>
+            <option value='HomeAccessories'>Home Accesories</option>
           </select>
         </div>
         <div>

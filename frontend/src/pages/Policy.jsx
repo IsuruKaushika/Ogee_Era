@@ -2,40 +2,27 @@ import React, { useState } from 'react';
 
 const Policy = () => {
   const [expandedSections, setExpandedSections] = useState({
-    terms: true,
-    product: false,
-    order: false,
-    risk: false,
-    payment: false,
-    warranty: false,
-    indemnification: false,
-    force: false,
-    website: false,
-    intellectual: false,
+    intro: true,
     information: false,
-    viruses: false,
-    jurisdiction: false,
-    privacyIntro: false,
-    personalData: false,
-    usage: false,
-    cookies: false,
-    thirdParty: false,
+    use: false,
+    sharing: false,
     security: false,
+    cookies: false,
     changes: false,
-    contact: false
+    contact: false,
   });
 
   const toggleSection = (section) => {
     setExpandedSections({
       ...expandedSections,
-      [section]: !expandedSections[section]
+      [section]: !expandedSections[section],
     });
   };
 
   const Section = ({ id, title, children }) => (
     <div className="mb-8 pb-4 border-b border-gray-300">
-      <div 
-        className="flex justify-between items-center cursor-pointer" 
+      <div
+        className="flex justify-between items-center cursor-pointer"
         onClick={() => toggleSection(id)}
       >
         <h2 className="prata-regular text-xl text-[#414141]">{title}</h2>
@@ -44,9 +31,7 @@ const Policy = () => {
         </div>
       </div>
       {expandedSections[id] && (
-        <div className="mt-4 text-[#414141] space-y-3">
-          {children}
-        </div>
+        <div className="mt-4 text-[#414141] space-y-3">{children}</div>
       )}
     </div>
   );
@@ -58,11 +43,13 @@ const Policy = () => {
           <div className="text-[#414141]">
             <div className="flex items-center gap-2">
               <p className="w-8 md:w-11 h-[2px] bg-[#414141]"></p>
-              <p className="font-medium text-sm md:text-base">LEGAL INFORMATION</p>
+              <p className="font-medium text-sm md:text-base">HELP & SUPPORT</p>
             </div>
-            <h1 className="prata-regular text-3xl sm:py-3 lg:text-5xl leading-relaxed">Privacy Policy</h1>
+            <h1 className="prata-regular text-3xl sm:py-3 lg:text-5xl leading-relaxed">
+              Privacy Policy
+            </h1>
             <div className="flex items-center gap-2">
-              <p className="font-semibold text-sm md:text-base">LAST UPDATED: MAY 5, 2025</p>
+              <p className="font-semibold text-sm md:text-base">LAST UPDATED: MAY 3, 2025</p>
               <p className="w-8 md:w-11 h-[1px] bg-[#414141]"></p>
             </div>
           </div>
@@ -70,70 +57,77 @@ const Policy = () => {
       </div>
 
       <div className="space-y-4">
-        {/* Existing Terms Sections (re-use yours here) */}
-        <Section id="terms" title="1. Terms of Use">
-          <p>By accessing this Website and/or using our services, you agree to comply with our Terms and all policies outlined herein.</p>
-        </Section>
-        <Section id="product" title="2. Product Information">
-          <p>All items listed are subject to availability. Photos may differ slightly from actual products.</p>
-        </Section>
-        <Section id="order" title="3. Placing an Order">
-          <p>Orders must be completed online. A confirmation email will be sent after payment is processed.</p>
-        </Section>
-        <Section id="risk" title="4. Risk and Title">
-          <p>Ownership transfers upon product delivery.</p>
-        </Section>
-        <Section id="payment" title="5. Price and Payment">
-          <p>We use a third-party payment processor. Prices may change without notice.</p>
-        </Section>
-        <Section id="warranty" title="6. Warranties; Limitation of Liability">
-          <p>All services are provided "as-is". We are not liable for damages or losses.</p>
-        </Section>
-        <Section id="indemnification" title="7. Indemnification">
-          <p>You agree to indemnify our company against any third-party claims.</p>
-        </Section>
-        <Section id="force" title="8. Force Majeure">
-          <p>We are not liable for delays caused by events beyond our control.</p>
-        </Section>
-        <Section id="website" title="9. Website Terms of Use">
-          <p>Do not reproduce, copy, or exploit any content from our website without permission.</p>
-        </Section>
-        <Section id="intellectual" title="10. Intellectual Property">
-          <p>All content is owned by our company and protected by copyright laws.</p>
+        <Section id="intro" title="1. Overview">
+          <p>
+            At <strong>ogeeera.lk</strong>, we are committed to protecting the privacy and security of our customers' personal information. By using our website, you consent to the practices described in this policy.
+          </p>
         </Section>
 
-        {/* Privacy Policy Sections */}
-        <Section id="privacyIntro" title="11. Privacy Policy - Introduction">
-          <p>This Privacy Policy outlines how we collect, use, and protect your personal data when you visit our site or make a purchase.</p>
+        <Section id="information" title="2. Information We Collect">
+          <ul className="list-disc pl-5 space-y-2">
+            <li><strong>Personal identification:</strong> Name, email, phone number (provided during registration or checkout).</li>
+            <li><strong>Payment & billing:</strong> Credit card and billing details (processed by secure third-party providers).</li>
+            <li><strong>Browsing data:</strong> IP address, browser type, device info (collected through cookies and similar technologies).</li>
+          </ul>
         </Section>
 
-        <Section id="personalData" title="12. Information We Collect">
-          <p>We collect information you provide during registration, order placement, or newsletter sign-up. This includes your name, email, phone number, shipping address, and payment details.</p>
+        <Section id="use" title="3. How We Use Your Information">
+          <ul className="list-disc pl-5 space-y-2">
+            <li>To process and fulfill orders, including shipping.</li>
+            <li>To provide support and respond to inquiries.</li>
+            <li>To personalize your shopping experience and promotions.</li>
+            <li>To improve our site and services based on your behavior.</li>
+            <li>To detect and prevent fraudulent or unauthorized activities.</li>
+          </ul>
         </Section>
 
-        <Section id="usage" title="13. How We Use Your Information">
-          <p>We use your data to process orders, deliver products, send promotional offers, improve our site experience, and comply with legal obligations.</p>
+        <Section id="sharing" title="4. Information Sharing">
+          <ul className="list-disc pl-5 space-y-2">
+            <li><strong>We do not sell or trade</strong> your personal data.</li>
+            <li>
+              <strong>Trusted service providers:</strong> We may share your info with partners for payment, delivery, or analytics. They are contractually obligated to keep it secure.
+            </li>
+            <li><strong>Legal disclosures:</strong> We may share data when required by law or in legal proceedings.</li>
+          </ul>
         </Section>
 
-        <Section id="cookies" title="14. Cookies and Tracking">
-          <p>We use cookies and similar technologies to enhance your browsing experience. Cookies help us understand user behavior and personalize content. You can disable cookies in your browser settings.</p>
+        <Section id="security" title="5. Data Security">
+          <p>
+            We use industry-standard security practices to protect your data. However, no method of electronic storage or internet transmission is 100% secure. We cannot guarantee absolute protection.
+          </p>
         </Section>
 
-        <Section id="thirdParty" title="15. Third-Party Services">
-          <p>We may share data with third-party vendors such as payment processors and shipping companies, solely for order fulfillment purposes. These parties are obligated to protect your information.</p>
+        <Section id="cookies" title="6. Cookies & Tracking Technologies">
+          <p>
+            We use cookies to enhance your browsing experience, analyze traffic, and understand preferences. You can disable cookies via your browser settings, though some site features may not work properly.
+          </p>
         </Section>
 
-        <Section id="security" title="16. Data Security">
-          <p>We implement a variety of security measures including encryption and secure servers to maintain the safety of your personal information. However, no system is 100% secure.</p>
+        <Section id="changes" title="7. Changes to This Policy">
+          <p>
+            We reserve the right to update this policy at any time. Changes will be posted here with the revised date. Please review it regularly to stay informed.
+          </p>
         </Section>
 
-        <Section id="changes" title="17. Changes to This Policy">
-          <p>We reserve the right to modify this Privacy Policy at any time. Updates will be posted on this page with an updated effective date.</p>
+        <Section id="contact" title="8. Contact Us">
+          <p>If you have any questions or concerns about this Privacy Policy, please contact us:</p>
+          <ul className="list-disc pl-5 mt-2 space-y-1">
+            <li>Email: ogeeeraa@gmail.com</li>
+            <li>Phone: +94 71 220 5395</li>
+            <li>Live Chat: Available during business hours</li>
+          </ul>
         </Section>
+      </div>
 
-        <Section id="contact" title="18. Contact Us">
-          <p>If you have questions about these Terms or our Privacy Policy, please contact us at <a href="mailto:support@ogeeera.com" className="text-blue-600 underline">support@ogeeera.com</a>.</p>
-        </Section>
+      <div className="mt-16 pt-8 border-t border-gray-300 flex flex-col items-center">
+        <div className="text-[#414141]">
+          <div className="flex items-center gap-2 justify-center">
+            <p className="w-8 md:w-11 h-[1px] bg-[#414141]"></p>
+            <p className="font-medium text-sm md:text-base">© 2025 OGEE ERA</p>
+            <p className="w-8 md:w-11 h-[1px] bg-[#414141]"></p>
+          </div>
+          <p className="text-center text-sm mt-2">All rights reserved.</p>
+        </div>
       </div>
     </div>
   );

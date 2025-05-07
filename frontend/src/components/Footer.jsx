@@ -18,6 +18,7 @@ const Footer = () => {
                     <li><a href="/about" className="hover:text-gray-900 transition-colors">About Us</a></li>
                     <li><a href="/terms-and-conditions" className="hover:text-gray-900 transition-colors">Terms and Conditions</a></li>
                     <li><a href="/privacy-and-policy" className="hover:text-gray-900 transition-colors">Privacy Policy</a></li>
+                    <li><a href="/return-policy" className="hover:text-gray-900 transition-colors">Return Policy</a></li>
                    
                     
                     <li><a href="/contact" className="hover:text-gray-900 transition-colors">Contact Us</a></li>
@@ -56,7 +57,7 @@ const Footer = () => {
         </div>
         <div>
             <hr />
-            <p className='py-5 text-sm text-center'>Copyright 2024@ OgeeEra.me - All Rights Reserved.</p>
+            <p className='py-5 text-sm text-center'>Copyright 2024@ OgeeEra.lk - All Rights Reserved.</p>
         </div>
     </div>
   )
