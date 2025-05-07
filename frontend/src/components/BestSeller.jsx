@@ -30,7 +30,8 @@ const BestSeller = () => {
                             name={item.name} 
                             image={item.image} 
                             price={item.price}
-                            stockStatus={item.stockStatus} // Added stock status prop
+                            stockStatus={item.stockStatus}
+                            stock={item.stock}
                         />
                     ))
                 }

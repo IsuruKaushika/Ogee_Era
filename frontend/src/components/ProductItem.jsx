@@ -20,25 +20,38 @@ const ProductItem = ({id, image, name, price, stockStatus}) => {
         }
     };
 
+    // Function to determine badge styling for out of stock items
+    const getBadgeStyle = () => {
+        switch(stockStatus) {
+            case 'Out of Stock':
+                return 'bg-red-500 text-white';
+            case 'Limited Stock':
+                return 'bg-orange-500 text-white';
+            case 'In Stock':
+                return 'bg-green-600 text-white';
+            default:
+                return 'bg-green-600 text-white'; // Default to in stock if not specified
+        }
+    };
+
     return (
         <Link className='text-gray-700 cursor-pointer' to={`/product/${id}`}>
             <div className='overflow-hidden relative'>
                 <img className='hover:scale-110 transition ease-in-out' src={image[0]} alt=" "/>
-                {stockStatus === 'Out of Stock' && (
-                    <div className='absolute top-0 right-0 bg-red-500 text-white px-2 py-1 text-xs'>
-                        Out of Stock
+                
+                {/* Stock Status Label - Bottom Right Corner of Image */}
+                {stockStatus && (
+                    <div className='absolute bottom-0 right-0 m-2'>
+                        <span className={`text-xs font-medium px-2 py-1 inline-block rounded shadow-md ${getBadgeStyle()}`}>
+                            {stockStatus}
+                        </span>
                     </div>
                 )}
             </div>
             <div className='flex justify-between items-center pt-3 pb-1'>
                 <p className='text-sm'>{name}</p>
-                {stockStatus && (
-                    <span className={`text-xs font-medium ${getStockStatusStyle()}`}>
-                        {stockStatus !== 'Out of Stock' ? stockStatus : ''}
-                    </span>
-                )}
+                <p className='text-sm font-medium'>{currency}{price}</p>
             </div>
-            <p className='text-sm font-medium'>{currency}{price}</p>
         </Link>
     )
 }
