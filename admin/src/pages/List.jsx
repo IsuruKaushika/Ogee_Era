@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react'
 import { backendUrl, currency } from '../App'
 import axios from 'axios'
 import { toast } from 'react-toastify'
-import { Link } from 'react-router-dom'
 
 const List = ({ token }) => {
   const [list, setList] = useState([])
+  const [isUpdating, setIsUpdating] = useState(false)
 
   const fetchList = async () => {
     try {
@@ -43,9 +43,55 @@ const List = ({ token }) => {
     }
   }
   
+  // Updated function to use the new endpoint
+  const updateStock = async (productId, newStatus) => {
+    if (isUpdating) return; // Prevent multiple simultaneous updates
+    
+    setIsUpdating(true)
+    try {
+      const response = await axios.post(
+        backendUrl + '/api/product/updateStockStatus',
+        { 
+          productId,
+          stockStatus: newStatus
+        },
+        { headers: { token } }
+      )
+      
+      if (response.data.success) {
+        toast.success(response.data.message)
+        fetchList() // refresh after update
+      } else {
+        toast.error(response.data.message)
+      }
+    } catch (e) {
+      console.log(e)
+      toast.error(e.message)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+  
   useEffect(() => {
     fetchList()
   }, [])
+
+  // Stock status options
+  const stockOptions = ['In Stock', 'Out of Stock', 'Limited Stock']
+
+  // Function to get background color based on stock status
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'In Stock':
+        return 'bg-green-500';
+      case 'Out of Stock':
+        return 'bg-red-500';
+      case 'Limited Stock':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-500';
+    }
+  }
 
   return (
     <>
@@ -57,7 +103,7 @@ const List = ({ token }) => {
           <b>Name</b>
           <b>Category</b>
           <b>Price</b>
-          <b className='text-center'>Edit</b>
+          <b className='text-center'>Stock Status</b>
           <b className='text-center'>Delete</b>
         </div>
         
@@ -70,13 +116,25 @@ const List = ({ token }) => {
               <p>{item.category}</p>
               <p>{currency}{item.price}</p>
               
-              {/* Edit Button */}
-              <p className='text-right md:text-center cursor-pointer text-blue-500 text-lg'>
-                <Link to={`/edit/${item._id}`}>
-                  <span className="hidden md:inline">Edit</span>
-                  <span className="md:hidden">✏️</span>
-                </Link>
-              </p>
+              {/* Stock Status Dropdown */}
+              <div className='text-right md:text-center'>
+                <select
+                  value={item.stockStatus}
+                  onChange={(e) => updateStock(item._id, e.target.value)}
+                  className={`px-2 py-1 rounded text-white cursor-pointer ${getStatusColor(item.stockStatus)}`}
+                  disabled={isUpdating}
+                >
+                  {stockOptions.map(option => (
+                    <option 
+                      key={option} 
+                      value={option}
+                      className="bg-white text-gray-800"
+                    >
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
               
               {/* Delete Button (X) */}
               <p onClick={() => removeProduct(item._id)} className='text-right md:text-center cursor-pointer text-red-500 text-lg'>X</p>
