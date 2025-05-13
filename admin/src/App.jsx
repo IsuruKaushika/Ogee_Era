@@ -44,6 +44,7 @@ const App = () => {
             <Route path ="/list" element={<List token={token}/>} />
             <Route path ="/orders" element={<Orders token={token}/>} />
             <Route path ="/edit/:id" element={<Edit token={token}/>} />
+            <Route path="/" element={<Add token={token}/>} />
 
           
   
