@@ -15,6 +15,7 @@ const Product = () => {
   const [productData, setProductData] = useState(false)
   const [image, setImage] = useState('')
   const [size, setSize] = useState('')
+  const [sizeError, setSizeError] = useState(false)
   const [showSizeChart, setShowSizeChart] = useState(false)
 
   const fetchProductData = async() => {
@@ -22,6 +23,14 @@ const Product = () => {
       if(item._id === productId){
         setProductData(item)
         setImage(item.image[0])
+        // Reset size error when changing products
+        setSizeError(false)
+        // If no sizes available, set a default size
+        if (!item.sizes || item.sizes.length === 0) {
+          setSize('default')
+        } else {
+          setSize('') // Reset size selection for products with size options
+        }
         return null;
       }
     })
@@ -50,9 +59,20 @@ const Product = () => {
     )
   }
 
-  // Function to handle size chart modal
-  const toggleSizeChart = () => {
-    setShowSizeChart(!showSizeChart)
+  // Function to handle adding to cart
+  const handleAddToCart = () => {
+    // For products with sizes, require size selection
+    if (productData.sizes && productData.sizes.length > 0 && !size) {
+      setSizeError(true)
+      return
+    }
+    
+    // Clear any previous error
+    setSizeError(false)
+    
+    // Add to cart with either selected size or default value
+    const sizeToUse = (productData.sizes && productData.sizes.length > 0) ? size : 'default'
+    addToCart(productData._id, sizeToUse)
   }
 
   return productData ? (
@@ -106,7 +126,10 @@ const Product = () => {
               <div className='flex gap-2'>
                 {productData.sizes.map((item, index) => (
                   <button 
-                    onClick={() => setSize(item)} 
+                    onClick={() => {
+                      setSize(item)
+                      setSizeError(false) // Clear error when size is selected
+                    }} 
                     className={`border py-2 px-4 bg-gray-100 ${item === size ? 'border-orange-500' : ''}`} 
                     key={index}
                   >
@@ -114,12 +137,16 @@ const Product = () => {
                   </button>
                 ))}
               </div>
+              {/* Show error message if needed */}
+              {sizeError && (
+                <p className="text-red-500 text-sm mt-1">Please select a size</p>
+              )}
             </div>
           )}
           
           {/* Disable Add to Cart button if out of stock */}
           <button 
-            onClick={() => productData.stockStatus !== 'Out of Stock' && addToCart(productData._id, size)} 
+            onClick={handleAddToCart} 
             className={`${
               productData.stockStatus === 'Out of Stock' 
                 ? 'bg-gray-400 cursor-not-allowed' 

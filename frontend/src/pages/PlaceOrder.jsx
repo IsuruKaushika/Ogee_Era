@@ -11,6 +11,7 @@ import md5 from 'crypto-js/md5';
 const PlaceOrder = () => {
   const [method, setMethod] = useState("cod");
   const {navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products} = useContext(ShopContext);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -72,8 +73,56 @@ const PlaceOrder = () => {
     form.submit();
   };
 
+  // Function to add order to Google Sheets
+  const addOrderToGoogleSheet = async (orderData, orderId, status) => {
+    try {
+      // Format items for Google Sheets
+      const itemsFormatted = orderData.items.map(item => 
+        `${item.name} (${item.size}) x ${item.quantity}`
+      ).join("; ");
+      
+      // Format address for Google Sheets
+      const fullAddress = `${orderData.address.street}, ${orderData.address.city}, ${orderData.address.state}, ${orderData.address.zipcode}, ${orderData.address.country}`;
+      
+      // Create data object for Google Sheets
+      const sheetData = {
+        orderId: orderId,
+        orderStatus: status,
+        customerName: `${orderData.address.firstName} ${orderData.address.lastName}`,
+        email: orderData.address.email,
+        address: fullAddress,
+        items: itemsFormatted,
+        phoneNumber: orderData.address.phone,
+        paymentMethod: orderData.payment_method,
+        amount: orderData.amount,
+        orderedDate: new Date().toISOString()
+      };
+      
+      // Google Apps Script web app URL - Replace with your deployed web app URL
+      const googleSheetsUrl = "https://script.google.com/macros/s/AKfycby7DDOdCEGRVUtOPGaULYkqRmFIM-3GJaQYA2Esufme4KOPn0aCTlmFwX18iu5T_vGtIQ/exec";
+      
+      // Send data to Google Sheets
+      const response = await axios.post(googleSheetsUrl, sheetData);
+      
+      // Log success but don't block the main flow
+      console.log("Order added to Google Sheet:", response.data);
+    } catch (error) {
+      // Log error but don't block the main flow
+      console.error("Failed to add order to Google Sheet:", error);
+      // We don't want to show an error toast here as it would confuse the user
+      // The order has been processed in the system, this is just a logging issue
+    }
+  };
+
   const onSubmitHandler = async(event) => {
     event.preventDefault();
+    
+    if (isSubmitting) {
+      return; // Prevent multiple submissions
+    }
+    
+    setIsSubmitting(true);
+    
     try {
       let orderItems = [];
 
@@ -104,6 +153,9 @@ const PlaceOrder = () => {
           const response = await axios.post(backendUrl + '/api/order/place', orderData, {headers: {token}});
           
           if(response.data.success) {
+            // Add order to Google Sheet
+            await addOrderToGoogleSheet(orderData, response.data.orderId, "Placed");
+            
             toast.success(response.data.message);
             setCartItems({});
             navigate('/orders');
@@ -121,8 +173,10 @@ const PlaceOrder = () => {
           );
           
           if(payhereResponse.data.success) {
-            // Initiate PayHere payment with the order ID, merchant ID, and hash received from backend
+            // Add order to Google Sheet with pending status
+            await addOrderToGoogleSheet(orderData, payhereResponse.data.orderId, "Pending Payment");
             
+            // Initiate PayHere payment with the order ID, merchant ID, and hash received from backend
             initiatePayherePayment(
               orderData, 
               payhereResponse.data.orderId,
@@ -143,6 +197,8 @@ const PlaceOrder = () => {
     } catch(error) {
       console.log(error);
       toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -218,8 +274,12 @@ const PlaceOrder = () => {
         </div>
 
         {/* ---- Place Order Button ---- */}
-        <button type='submit' className="w-full mt-6 bg-black text-white py-3 rounded-md text-lg font-medium hover:bg-gray-800 transition">
-          {method === 'payhere' ? 'Pay Now' : 'Place Order'}
+        <button 
+          type='submit' 
+          disabled={isSubmitting}
+          className={`w-full mt-6 ${isSubmitting ? 'bg-gray-500' : 'bg-black hover:bg-gray-800'} text-white py-3 rounded-md text-lg font-medium transition`}
+        >
+          {isSubmitting ? 'Processing...' : (method === 'payhere' ? 'Pay Now' : 'Place Order')}
         </button>
       </div>
     </form>
