@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { assets } from '../assets/assets'
 import axios from 'axios'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
 
-// Image compression helper function
-const compressImage = async (file, maxSizeMB = 9.5) => {
+// Enhanced image compression helper function with dynamic quality adjustment
+const compressImage = async (file, maxSizeMB = 2, qualityTarget = 0.8) => {
   // Return original file if already under the size limit
   if (file.size / 1024 / 1024 < maxSizeMB) {
     return file;
@@ -21,29 +21,31 @@ const compressImage = async (file, maxSizeMB = 9.5) => {
       img.onload = () => {
         // Calculate scaling factor to get below max size
         const originalSize = file.size / 1024 / 1024; // size in MB
-        let quality = 0.9; // Start with high quality
+        let quality = qualityTarget; // Use the provided quality target
         
-        // Decrease quality for very large images
-        if (originalSize > 20) {
+        // Dynamically adjust quality based on image size
+        if (originalSize > 8) {
+          quality = 0.5;
+        } else if (originalSize > 5) {
+          quality = 0.6;
+        } else if (originalSize > 3) {
           quality = 0.7;
-        } else if (originalSize > 15) {
-          quality = 0.8;
         }
         
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
         
-        // If image is extremely large, reduce dimensions
-        const MAX_DIMENSION = 4000; // Set reasonable max dimension
+        // Scale down dimensions for very large images
+        const MAX_DIMENSION = 2000; // Reduced from 4000 to 2000
         if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
           const aspectRatio = width / height;
           if (width > height) {
             width = MAX_DIMENSION;
-            height = width / aspectRatio;
+            height = Math.round(width / aspectRatio);
           } else {
             height = MAX_DIMENSION;
-            width = height * aspectRatio;
+            width = Math.round(height * aspectRatio);
           }
         }
         
@@ -61,7 +63,13 @@ const compressImage = async (file, maxSizeMB = 9.5) => {
             lastModified: Date.now(),
           });
           
-          resolve(newFile);
+          // If still too large, try again with lower quality
+          if (newFile.size / 1024 / 1024 > maxSizeMB && quality > 0.3) {
+            // Recursively compress with lower quality
+            compressImage(file, maxSizeMB, quality - 0.1).then(resolve);
+          } else {
+            resolve(newFile);
+          }
         }, file.type, quality);
       };
     };
@@ -86,6 +94,10 @@ const Add = ({ token }) => {
   
   // Track if compression is in progress
   const [compressing, setCompressing] = useState(false);
+  
+  // Track total size of all images
+  const [totalSize, setTotalSize] = useState(0);
+  const MAX_TOTAL_SIZE = 9; // Maximum total size in MB
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -96,25 +108,64 @@ const Add = ({ token }) => {
   const [bestseller, setBestseller] = useState(false);
   const [hasSizeChart, setHasSizeChart] = useState(false);
 
+  // Calculate total size whenever images change
+  useEffect(() => {
+    const calculateTotalSize = () => {
+      let size = 0;
+      if (image1) size += image1.size;
+      if (image2) size += image2.size;
+      if (image3) size += image3.size;
+      if (image4) size += image4.size;
+      if (sizeChart) size += sizeChart.size;
+      
+      // Convert to MB
+      setTotalSize(size / (1024 * 1024));
+    };
+    
+    calculateTotalSize();
+  }, [image1, image2, image3, image4, sizeChart]);
+
   // Handle image selection with compression if needed
   const handleImageSelect = async (e, setImageFunction, imageKey) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Store the original file URL for preview
-    setDisplayImages(prev => ({
-      ...prev,
-      [imageKey]: URL.createObjectURL(file)
-    }));
-    
     try {
       setCompressing(true);
-      // Check file size and compress if needed
-      const fileSize = file.size / 1024 / 1024; // size in MB
       
-      if (fileSize > 1) {
-        toast.info(`Optimizing image (${fileSize.toFixed(2)}MB) to meet size requirements...`);
-        const compressedFile = await compressImage(file);
+      // Store the original file URL for preview
+      setDisplayImages(prev => ({
+        ...prev,
+        [imageKey]: URL.createObjectURL(file)
+      }));
+      
+      // Check how much space we have left
+      let currentTotal = totalSize;
+      
+      // Subtract current image size if replacing an existing image
+      if (imageKey === 'image1' && image1) currentTotal -= image1.size / (1024 * 1024);
+      if (imageKey === 'image2' && image2) currentTotal -= image2.size / (1024 * 1024);
+      if (imageKey === 'image3' && image3) currentTotal -= image3.size / (1024 * 1024);
+      if (imageKey === 'image4' && image4) currentTotal -= image4.size / (1024 * 1024);
+      if (imageKey === 'sizeChart' && sizeChart) currentTotal -= sizeChart.size / (1024 * 1024);
+      
+      const fileSize = file.size / 1024 / 1024; // size in MB
+      const potentialNewTotal = currentTotal + fileSize;
+      
+      // Determine max size for this image based on remaining space
+      let targetMaxSize = 2; // Default target size
+      
+      // If adding this image would exceed total limit, compress more aggressively
+      if (potentialNewTotal > MAX_TOTAL_SIZE) {
+        // Calculate how much space we have left
+        const remainingSpace = Math.max(0.5, MAX_TOTAL_SIZE - currentTotal);
+        targetMaxSize = remainingSpace;
+        toast.info(`Image needs significant optimization to meet ${MAX_TOTAL_SIZE}MB total limit...`);
+      }
+      
+      if (fileSize > targetMaxSize) {
+        toast.info(`Optimizing image (${fileSize.toFixed(2)}MB)...`);
+        const compressedFile = await compressImage(file, targetMaxSize);
         const compressedSize = compressedFile.size / 1024 / 1024;
         
         setImageFunction(compressedFile);
@@ -134,6 +185,12 @@ const Add = ({ token }) => {
     e.preventDefault();
 
     try {
+      // Final check if total size is within limits
+      if (totalSize > MAX_TOTAL_SIZE) {
+        toast.error(`Total image size (${totalSize.toFixed(2)}MB) exceeds the ${MAX_TOTAL_SIZE}MB limit. Please reduce image sizes.`);
+        return;
+      }
+      
       const formData = new FormData();
       formData.append('name', name);
       formData.append('description', description);
@@ -151,9 +208,13 @@ const Add = ({ token }) => {
       sizeChart && formData.append('sizeChart', sizeChart);
 
       // Show loading message
-      const toastId = toast.loading("Adding product...");
+      const toastId = toast.loading(`Adding product (${totalSize.toFixed(2)}MB)...`);
       
-      const response = await axios.post(backendUrl + "/api/product/add", formData, { headers: { token } });
+      // Implement axios timeout option to handle slow connections
+      const response = await axios.post(backendUrl + "/api/product/add", formData, { 
+        headers: { token },
+        timeout: 60000, // 60 seconds timeout
+      });
       
       // Update toast message based on response
       if (response.data.success) {
@@ -165,24 +226,7 @@ const Add = ({ token }) => {
         });
         
         // Reset form
-        setName('');
-        setDescription('');
-        setPrice('');
-        setImage1(false);
-        setImage2(false);
-        setImage3(false);
-        setImage4(false);
-        setSizeChart(false);
-        setDisplayImages({
-          image1: null,
-          image2: null,
-          image3: null,
-          image4: null,
-          sizeChart: null
-        });
-        setSizes([]);
-        setBestseller(false);
-        setHasSizeChart(false);
+        resetForm();
       } else {
         toast.update(toastId, { 
           render: response.data.message, 
@@ -193,8 +237,37 @@ const Add = ({ token }) => {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message || "Failed to add product");
+      if (error.code === 'ECONNABORTED') {
+        toast.error("Upload timeout. The images may be too large. Please try optimizing further.");
+      } else if (error.response && error.response.status === 413) {
+        toast.error("The server rejected the upload because the file size is too large.");
+      } else {
+        toast.error(error.message || "Failed to add product");
+      }
     }
+  };
+
+  // Reset form function
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setPrice('');
+    setImage1(false);
+    setImage2(false);
+    setImage3(false);
+    setImage4(false);
+    setSizeChart(false);
+    setDisplayImages({
+      image1: null,
+      image2: null,
+      image3: null,
+      image4: null,
+      sizeChart: null
+    });
+    setSizes([]);
+    setBestseller(false);
+    setHasSizeChart(false);
+    setTotalSize(0);
   };
 
   // Toggle size chart option
@@ -221,7 +294,12 @@ const Add = ({ token }) => {
   return (
     <form onSubmit={onSubmitHandler} className='flex flex-col w-full items-start gap-3'>
       <div>
-        <p className='mb-2'>Upload Image{compressing && ' (Processing...)' }</p>
+        <div className="flex justify-between items-center mb-2">
+          <p>Upload Image{compressing && ' (Processing...)' }</p>
+          <p className={`text-sm ${totalSize > MAX_TOTAL_SIZE ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+            Total: {totalSize.toFixed(2)}MB / {MAX_TOTAL_SIZE}MB
+          </p>
+        </div>
         <div className='flex gap-2'>
           <label htmlFor="image1" className={`relative ${compressing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             <img 
@@ -229,6 +307,11 @@ const Add = ({ token }) => {
               src={displayImages.image1 || assets.upload_area} 
               alt=''
             />
+            {image1 && (
+              <span className="absolute top-0 right-0 bg-blue-100 text-xs px-1 rounded">
+                {(image1.size / (1024 * 1024)).toFixed(1)}MB
+              </span>
+            )}
             <input 
               onChange={(e) => handleImageSelect(e, setImage1, 'image1')} 
               type="file" 
@@ -244,6 +327,11 @@ const Add = ({ token }) => {
               src={displayImages.image2 || assets.upload_area} 
               alt=''
             />
+            {image2 && (
+              <span className="absolute top-0 right-0 bg-blue-100 text-xs px-1 rounded">
+                {(image2.size / (1024 * 1024)).toFixed(1)}MB
+              </span>
+            )}
             <input 
               onChange={(e) => handleImageSelect(e, setImage2, 'image2')} 
               type="file" 
@@ -259,6 +347,11 @@ const Add = ({ token }) => {
               src={displayImages.image3 || assets.upload_area} 
               alt=''
             />
+            {image3 && (
+              <span className="absolute top-0 right-0 bg-blue-100 text-xs px-1 rounded">
+                {(image3.size / (1024 * 1024)).toFixed(1)}MB
+              </span>
+            )}
             <input 
               onChange={(e) => handleImageSelect(e, setImage3, 'image3')} 
               type="file" 
@@ -274,6 +367,11 @@ const Add = ({ token }) => {
               src={displayImages.image4 || assets.upload_area} 
               alt=''
             />
+            {image4 && (
+              <span className="absolute top-0 right-0 bg-blue-100 text-xs px-1 rounded">
+                {(image4.size / (1024 * 1024)).toFixed(1)}MB
+              </span>
+            )}
             <input 
               onChange={(e) => handleImageSelect(e, setImage4, 'image4')} 
               type="file" 
@@ -286,6 +384,11 @@ const Add = ({ token }) => {
         </div>
         {compressing && (
           <p className="text-sm text-blue-600 mt-1">Processing image, please wait...</p>
+        )}
+        {totalSize > MAX_TOTAL_SIZE && (
+          <p className="text-sm text-red-600 mt-1">
+            Total image size exceeds {MAX_TOTAL_SIZE}MB limit. Please reduce image sizes or quality.
+          </p>
         )}
       </div>
       <div className='w-full'>
@@ -366,6 +469,11 @@ const Add = ({ token }) => {
                 src={displayImages.sizeChart || assets.upload_area} 
                 alt='Size Chart'
               />
+              {sizeChart && (
+                <span className="absolute top-0 right-0 bg-blue-100 text-xs px-1 rounded">
+                  {(sizeChart.size / (1024 * 1024)).toFixed(1)}MB
+                </span>
+              )}
               <input 
                 onChange={(e) => handleImageSelect(e, setSizeChart, 'sizeChart')} 
                 type="file" 
@@ -394,7 +502,7 @@ const Add = ({ token }) => {
       <button 
         type="submit" 
         className='w-28 py-3 mt-4 bg-black text-white disabled:bg-gray-400'
-        disabled={compressing || (hasSizeChart && !sizeChart)}
+        disabled={compressing || (hasSizeChart && !sizeChart) || totalSize > MAX_TOTAL_SIZE}
       >
         {compressing ? 'Processing...' : 'ADD'}
       </button>
