@@ -31,12 +31,15 @@ const Orders = ({ token }) => {
   }
 
   const statusHandler = async (event, orderId) => {
+    const newStatus = event.target.value
     try {
       const response = await axios.post(backendUrl + '/api/order/status', 
-        { orderId, status: event.target.value }, 
+        { orderId, status: newStatus }, 
         { headers: { token } }
       )
       if (response.data.success) {
+        // Show success notification with the new status
+        toast.success(`Order status updated to: ${newStatus}`)
         fetchAllOrders()
       }
     } catch (error) {
@@ -177,9 +180,7 @@ const Orders = ({ token }) => {
                 className='p-2 font-semibold'
               >
                 <option value="Order Placed">Order Placed</option>
-                <option value="Packing">Packing</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Out for Delivery">Out for Delivery</option>
+                <option value="Print Label and Pack">Packing</option>
                 <option value="Delivered">Delivered</option>
               </select>
             </div>
