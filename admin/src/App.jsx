@@ -7,7 +7,9 @@ import {ToastContainer} from 'react-toastify'
 
 import Add from './pages/Add'
 import List from './pages/List'
-import Orders from './pages/Orders'
+import PlacedOrders from './pages/PlacedOrders'
+import PackingOrders from './pages/PackingOrders'
+import DeliveredOrders from './pages/DeliveredOrders'
 import Edit from './pages/Edit';
 
 import Login from './components/Login'
@@ -42,7 +44,9 @@ const App = () => {
           <Routes>
             <Route path ="/add" element={<Add token={token}/>} />
             <Route path ="/list" element={<List token={token}/>} />
-            <Route path ="/orders" element={<Orders token={token}/>} />
+            <Route path ="/Placedorders" element={<PlacedOrders token={token}/>} />
+            <Route path ="/PackingOrders" element={<PackingOrders token={token}/>} />
+            <Route path ="/DeliveredOrders" element={<DeliveredOrders token={token}/>} />
             <Route path ="/edit/:id" element={<Edit token={token}/>} />
             <Route path="/" element={<Add token={token}/>} />
 

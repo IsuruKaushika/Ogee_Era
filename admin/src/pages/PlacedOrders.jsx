@@ -5,13 +5,8 @@ import { backendUrl, currency } from '../App'
 import { toast } from 'react-toastify'
 import { assets } from '../assets/assets'
 
-const Orders = ({ token }) => {
+const PlacedOrders = ({ token }) => {
   const [orders, setOrders] = useState([])
-  const [filteredOrders, setFilteredOrders] = useState([])
-  const [filters, setFilters] = useState({
-    paymentMethod: '',
-    status: ''
-  })
 
   const fetchAllOrders = async () => {
     if (!token) {
@@ -20,8 +15,9 @@ const Orders = ({ token }) => {
     try {
       const response = await axios.post(backendUrl + '/api/order/list', {}, { headers: { token } })
       if (response.data.success) {
-        setOrders(response.data.orders)
-        setFilteredOrders(response.data.orders)
+        // Filter to only show "Order Placed" orders
+        const placedOrders = response.data.orders.filter(order => order.status === 'Order Placed')
+        setOrders(placedOrders)
       } else {
         toast.error(response.data.message)
       }
@@ -48,106 +44,25 @@ const Orders = ({ token }) => {
     }
   }
 
-  const filterOrders = () => {
-    let result = [...orders]
-    
-    if (filters.paymentMethod) {
-      result = result.filter(order => order.paymentMethod === filters.paymentMethod)
-    }
-    
-    if (filters.status) {
-      result = result.filter(order => order.status === filters.status)
-    }
-    
-    setFilteredOrders(result)
-  }
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-
-  const clearFilters = () => {
-    setFilters({
-      paymentMethod: '',
-      status: ''
-    })
-    setFilteredOrders(orders)
-  }
-
   useEffect(() => {
     fetchAllOrders()
   }, [token])
 
-  useEffect(() => {
-    filterOrders()
-  }, [filters, orders])
-
-  // Extract unique statuses for the filter dropdown
-  const uniqueStatuses = [...new Set(orders.map(order => order.status))]
-
   return (
     <div className="container mx-auto px-4">
-      <h3 className="text-xl font-bold mb-4">Order Page</h3>
-      
-      {/* Filter Section */}
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-        <h4 className="text-lg font-medium mb-3">Filters</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-            <select
-              name="paymentMethod"
-              value={filters.paymentMethod}
-              onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            >
-              <option value="">All Payment Methods</option>
-              <option value="COD">Cash on Delivery</option>
-              <option value="Payhere">Payhere</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
-            <select
-              name="status"
-              value={filters.status}
-              onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            >
-              <option value="">All Statuses</option>
-              {uniqueStatuses.map((status, idx) => (
-                <option key={idx} value={status}>{status}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="flex items-end">
-            <button 
-              onClick={clearFilters}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md transition-colors"
-            >
-              Clear Filters
-            </button>
-          </div>
-        </div>
-      </div>
+      <h3 className="text-xl font-bold mb-4">Order Placed</h3>
       
       {/* Orders Count */}
       <div className="mb-4">
         <p className="text-sm text-gray-600">
-          Showing {filteredOrders.length} of {orders.length} orders
+          {orders.length} order{orders.length !== 1 ? 's' : ''} placed
         </p>
       </div>
 
       {/* Orders List */}
       <div>
-        {filteredOrders.length > 0 ? (
-          filteredOrders.map((order, index) => (
+        {orders.length > 0 ? (
+          orders.map((order, index) => (
             <div className='grid grid-cols-1 sm:grid-cols-[0.5fr_2fr_1fr] lg:grid-cols-[0.5fr_2fr_1fr_1fr_1fr] gap-3 items-start border-2 border-gray-200 p-5 md:p-8 my-3 md:my-4 text-xs sm:text-sm text-gray-700' key={index}>
               <img className='w-12' src={assets.parcel_icon} alt="Parcel" />
               <div>
@@ -187,7 +102,7 @@ const Orders = ({ token }) => {
           ))
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-500">No orders match the selected filters</p>
+            <p className="text-gray-500">No orders placed yet</p>
           </div>
         )}
       </div>
@@ -195,4 +110,4 @@ const Orders = ({ token }) => {
   )
 }
 
-export default Orders
+export default PlacedOrders
