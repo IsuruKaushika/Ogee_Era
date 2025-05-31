@@ -16,10 +16,10 @@ const NewsLetterBox = () => {
     console.log("Sending email with params:", templateParams)
 
     emailjs.send(
-      'service_rnsr2tp',       // Your EmailJS service ID
-      'template_06lsvyx',      // Your EmailJS template ID
+      'service_8z22ypm',       // Your EmailJS service ID
+      'template_yycmbkq',      // Your EmailJS template ID
       templateParams,
-      'r_QvKdxh2QjipiCmk'      // Your EmailJS public key
+      'QrrSb4PfdwR9On26Z'      // Your EmailJS public key
     )
     .then((response) => {
       console.log('SUCCESS!', response.status, response.text)
