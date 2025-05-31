@@ -29,10 +29,10 @@ const Contact = () => {
 
     // EmailJS service configuration
     emailjs.sendForm(
-      'service_rnsr2tp', // Replace with your EmailJS service ID
-      'template_2hw59xa', // Replace with your EmailJS template ID
+      'service_8z22ypm', // Replace with your EmailJS service ID
+      'template_6mmafon', // Replace with your EmailJS template ID
       form.current,
-      'r_QvKdxh2QjipiCmk' // Replace with your EmailJS public key
+      'QrrSb4PfdwR9On26Z' // Replace with your EmailJS public key
     )
     .then((result) => {
       console.log('Email sent successfully:', result.text);
