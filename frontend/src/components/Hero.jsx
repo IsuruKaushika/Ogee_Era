@@ -53,7 +53,7 @@ const Hero = () => {
 
   if (isLoading || bestSellerImages.length === 0) {
     return (
-      <div className='flex flex-col sm:flex-row border border-gray-400 h-[300px] sm:h-[480px] lg:h-[520px]'>
+      <div className='flex flex-col sm:flex-row border border-gray-400 h-[500px] sm:h-[600px] lg:h-[700px]'>
         <div className='w-full sm:w-1/2 order-1 sm:order-none bg-gray-200 animate-pulse'></div>
         <div className='w-full sm:w-1/2 flex items-center justify-center py-10 sm:py-0'>
           <div className='text-[#414141]'>Loading...</div>
@@ -63,10 +63,10 @@ const Hero = () => {
   }
 
   return (
-    <div className='flex flex-col sm:flex-row border border-gray-400 overflow-hidden min-h-[300px] sm:min-h-[480px] lg:min-h-[520px]'>
+    <div className='flex flex-col sm:flex-row border border-gray-400 overflow-hidden min-h-[500px] sm:min-h-[600px] lg:min-h-[700px]'>
         {/*Hero Right Side - Rotating Bestseller Images*/}
         <div className='w-full sm:w-1/2 order-1 sm:order-none relative overflow-hidden group'>
-          <div className='relative h-[300px] sm:h-[480px] lg:h-[520px]'>
+          <div className='relative h-[500px] sm:h-[600px] lg:h-[700px]'>
             {bestSellerImages.map((imageData, index) => (
               <img 
                 key={imageData.id}
@@ -124,7 +124,7 @@ const Hero = () => {
         </div>
         
         {/*Hero Left Side - Animated Text*/}
-        <div className='w-full sm:w-1/2 flex items-center justify-center py-6 sm:py-8 animate-fade-in-left'>
+        <div className='w-full sm:w-1/2 flex items-center justify-center py-10 sm:py-0 animate-fade-in-left'>
           <div className='text-[#414141]'>
               <div className='flex items-center gap-2 animate-slide-in-top' style={{animationDelay: '0.2s'}}>
                   <p className='w-8 md:w-11 h-[2px] bg-[#414141] animate-expand-width'></p>
