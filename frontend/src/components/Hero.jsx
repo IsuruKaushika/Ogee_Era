@@ -53,7 +53,7 @@ const Hero = () => {
 
   if (isLoading || bestSellerImages.length === 0) {
     return (
-      <div className='flex flex-col sm:flex-row border border-gray-400 h-[420px] sm:h-[480px] lg:h-[520px]'>
+      <div className='flex flex-col sm:flex-row border border-gray-400 h-[300px] sm:h-[480px] lg:h-[520px]'>
         <div className='w-full sm:w-1/2 order-1 sm:order-none bg-gray-200 animate-pulse'></div>
         <div className='w-full sm:w-1/2 flex items-center justify-center py-10 sm:py-0'>
           <div className='text-[#414141]'>Loading...</div>
@@ -63,10 +63,10 @@ const Hero = () => {
   }
 
   return (
-    <div className='flex flex-col sm:flex-row border border-gray-400 overflow-hidden min-h-[420px] sm:min-h-[480px] lg:min-h-[520px]'>
+    <div className='flex flex-col sm:flex-row border border-gray-400 overflow-hidden min-h-[300px] sm:min-h-[480px] lg:min-h-[520px]'>
         {/*Hero Right Side - Rotating Bestseller Images*/}
         <div className='w-full sm:w-1/2 order-1 sm:order-none relative overflow-hidden group'>
-          <div className='relative h-[420px] sm:h-[480px] lg:h-[520px]'>
+          <div className='relative h-[300px] sm:h-[480px] lg:h-[520px]'>
             {bestSellerImages.map((imageData, index) => (
               <img 
                 key={imageData.id}
