@@ -124,7 +124,7 @@ const Hero = () => {
         </div>
         
         {/*Hero Left Side - Animated Text*/}
-        <div className='w-full sm:w-1/2 flex items-center justify-center py-16 sm:py-8 animate-fade-in-left'>
+        <div className='w-full sm:w-1/2 flex items-center justify-center py-6 sm:py-8 animate-fade-in-left'>
           <div className='text-[#414141]'>
               <div className='flex items-center gap-2 animate-slide-in-top' style={{animationDelay: '0.2s'}}>
                   <p className='w-8 md:w-11 h-[2px] bg-[#414141] animate-expand-width'></p>
