@@ -36,7 +36,7 @@ const DeliveredOrders = ({ token }) => {
 
   // Send a single order to Google Sheets
   const sendToSheet = async (order) => {
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbxzQvfwOFIcti5zezdJEmR1Lv90QUNRc--V8Kb3G8ctYS2bhHhcez7tx8nuJHv6XpqK/exec'
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxinYsjywcp0UZxfcJ572C6Qcpb3cpqxbq5-PGkPg6E6NHwXNcwZ2wC5F0PVMCJp-8AkA/exec'
 
     const formData = new URLSearchParams()
     formData.append('orderId', order._id)
@@ -62,13 +62,43 @@ const DeliveredOrders = ({ token }) => {
         body: formData.toString()
       })
       const text = await res.text()
-      toast.success(`Order sent to sheet: ${order._id}`)
+      // Optionally, you can check for success in the response text
+      return true
     } catch (err) {
       toast.error('Error sending to sheet: ' + err.message)
+      return false
     }
   }
 
-  // Send all delivered orders
+  // Delete order from backend
+  const deleteOrder = async (orderId) => {
+    try {
+      const response = await axios.post(
+        backendUrl + '/api/order/delete',
+        { orderId },
+        { headers: { token } }
+      )
+      if (response.data.success) {
+        toast.success('Order deleted successfully')
+        fetchAllOrders()
+      } else {
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      toast.error(error.message)
+    }
+  }
+
+  // Handle delete: first send to sheet, then delete from backend
+  const handleDelete = async (order) => {
+    const success = await sendToSheet(order)
+    if (success) {
+      await deleteOrder(order._id)
+    } else {
+      toast.error('Order not deleted because it was not added to the sheet.')
+    }
+  }
+
   const handleSendAll = () => {
     if (orders.length === 0) {
       toast.info('No delivered orders to send.')
@@ -101,12 +131,7 @@ const DeliveredOrders = ({ token }) => {
         <p className="text-sm text-gray-600">
           {orders.length} delivered order{orders.length !== 1 ? 's' : ''}
         </p>
-        <button
-          onClick={handleSendAll}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-        >
-          Send All to Google Sheet
-        </button>
+        
       </div>
       <div>
         {orders.length > 0 ? (
@@ -153,6 +178,15 @@ const DeliveredOrders = ({ token }) => {
                 <option value="Print Label and Pack">Packing</option>
                 <option value="Delivered">Delivered</option>
               </select>
+              {/* Delete Button */}
+           <button
+  onClick={() => handleDelete(order)}
+  className="bg-red-500 text-white min-w-[180px] py-2 rounded hover:bg-red-600 text-xs mt-2"
+>
+  Delete And Send to Sheet
+</button>
+
+
             </div>
           ))
         ) : (
