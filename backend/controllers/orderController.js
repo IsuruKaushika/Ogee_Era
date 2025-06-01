@@ -239,6 +239,27 @@ const updateStatus = async(req, res) => {
     }
 }
 
+// Delete order from admin
+const deleteOrder = async(req, res) => {
+    try {
+        const {orderId} = req.body;
+        
+        // Check if order exists
+        const order = await orderModel.findById(orderId);
+        if (!order) {
+            return res.json({success: false, message: "Order not found"});
+        }
+        
+        // Delete the order
+        await orderModel.findByIdAndDelete(orderId);
+        
+        res.json({success: true, message: "Order deleted successfully"});
+    } catch(error) {
+        console.log(error);
+        res.json({success: false, message: error.message});
+    }
+}
+
 export {
     placeOrder, 
     userOrders, 
@@ -248,5 +269,6 @@ export {
     createPendingOrder,
     payhereNotify,
     payhereSuccess,
-    payhereFailure
+    payhereFailure,
+    deleteOrder
 }
