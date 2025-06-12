@@ -9,7 +9,7 @@ dotenv.config();
 // PayHere credentials from environment variables
 const PAYHERE_MERCHANT_ID = process.env.PAYHERE_MERCHANT_ID;
 const PAYHERE_MERCHANT_SECRET = process.env.PAYHERE_MERCHANT_SECRET;
-const PAYHERE_SANDBOX = process.env.PAYHERE_SANDBOX === 'false';
+const PAYHERE_SANDBOX = process.env.PAYHERE_SANDBOX === 'true';
 
 const placeOrder = async(req, res) => {
     try {
