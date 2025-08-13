@@ -10,13 +10,13 @@ const ProductItem = ({id, image, name, price, stockStatus}) => {
     const getStockStatusStyle = () => {
         switch(stockStatus) {
             case 'In Stock':
-                return 'text-gray-600';
+                return 'text-green-600';
             case 'Out of Stock':
-                return 'text-gray-600';
+                return 'text-red-600';
             case 'Limited Stock':
                 return 'text-orange-500';
             default:
-                return 'text-gray-600'; // Default to grey if not specified
+                return 'text-green-600'; // Default to in stock if not specified
         }
     };
 
@@ -24,25 +24,25 @@ const ProductItem = ({id, image, name, price, stockStatus}) => {
     const getBadgeStyle = () => {
         switch(stockStatus) {
             case 'Out of Stock':
-                return 'bg-gray-500 text-white';
+                return 'bg-red-500 text-white';
             case 'Limited Stock':
                 return 'bg-orange-500 text-white';
             case 'In Stock':
-                return 'bg-gray-600 text-white';
+                return 'bg-green-600 text-white';
             default:
-                return 'bg-gray-600 text-white'; // Default to grey if not specified
+                return 'bg-green-600 text-white'; // Default to in stock if not specified
         }
     };
 
     return (
-        <Link className='text-gray-700 cursor-pointer' to={`/product/${id}`}>
+        <Link className='text-gray-700 cursor-pointer' to={/product/${id}}>
             <div className='overflow-hidden relative'>
                 <img className='hover:scale-110 transition ease-in-out' src={image[0]} alt=" "/>
-                
+
                 {/* Stock Status Label - Bottom Right Corner of Image */}
                 {stockStatus && (
                     <div className='absolute bottom-0 right-0 m-2'>
-                        <span className={`text-xs font-medium px-2 py-1 inline-block rounded shadow-md ${getBadgeStyle()}`}>
+                        <span className={text-xs font-medium px-2 py-1 inline-block rounded shadow-md ${getBadgeStyle()}}>
                             {stockStatus}
                         </span>
                     </div>
