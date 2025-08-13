@@ -19,7 +19,6 @@ import Terms from './pages/Terms'
 import privacy from './pages/Policy'
 import Returns from './pages/Returns'
 import ScrollToTop from './components/ScrollToTop'
-
 import {ToastContainer,toast} from 'react-toastify'//used for notifications
 import 'react-toastify/dist/ReactToastify.css'
 import Policy from './pages/Policy'
