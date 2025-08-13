@@ -45,8 +45,8 @@ const Product = () => {
     if (!productData.stockStatus) return null;
     
     const statusColor = {
-      'In Stock': 'text-green-600',
-      'Out of Stock': 'text-red-600',
+      'In Stock': 'text-gray-600',
+      'Out of Stock': 'text-gray-600',
       'Limited Stock': 'text-orange-500'
     }
 
@@ -82,10 +82,10 @@ const Product = () => {
 
         {/*product Images*/}
         <div className='flex-1 flex flex-col-reverse gap-3 sm:flex-row'>
-          <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-between sm:justify-normal sm:w-[18.7%] w-full'>
+          <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-start sm:justify-start gap-2 sm:gap-3 sm:w-[18.7%] w-full'>
             {
               productData.image.map((item, index) => (
-                <img onClick={() => setImage(item)} key={index} className='w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer' src={item} alt=""/>
+                <img onClick={() => setImage(item)} key={index} className='w-[24%] sm:w-full flex-shrink-0 cursor-pointer' src={item} alt=""/>
               ))
             }
           </div>
