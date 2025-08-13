@@ -8,7 +8,7 @@ const Footer = () => {
             <div>
                 <img src={assets.logo} className='mb-5 w-32' alt="Ogiera Logo"/>
                 <p className='w-full md:w-2/3 text-gray-600'>
-                Hurry, Shop Now and Embrace the Essence of Ogi's Unique Style!
+                Hurry, Shop Now and Embrace the Essence of Ogee's Unique Style!
                 </p>
             </div>
             <div>
@@ -58,6 +58,11 @@ const Footer = () => {
         <div>
             <hr />
             <p className='py-5 text-sm text-center'>Copyright 2024@ OgeeEra.lk - All Rights Reserved.</p>
+         
+        </div>
+        <div>
+            <hr />
+            
         </div>
     </div>
   )

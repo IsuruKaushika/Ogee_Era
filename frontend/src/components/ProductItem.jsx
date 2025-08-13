@@ -10,13 +10,13 @@ const ProductItem = ({id, image, name, price, stockStatus}) => {
     const getStockStatusStyle = () => {
         switch(stockStatus) {
             case 'In Stock':
-                return 'text-green-600';
+                return 'text-gray-600';
             case 'Out of Stock':
-                return 'text-red-600';
+                return 'text-gray-600';
             case 'Limited Stock':
                 return 'text-orange-500';
             default:
-                return 'text-green-600'; // Default to in stock if not specified
+                return 'text-gray-600'; // Default to grey if not specified
         }
     };
 
@@ -24,13 +24,13 @@ const ProductItem = ({id, image, name, price, stockStatus}) => {
     const getBadgeStyle = () => {
         switch(stockStatus) {
             case 'Out of Stock':
-                return 'bg-red-500 text-white';
+                return 'bg-gray-500 text-white';
             case 'Limited Stock':
                 return 'bg-orange-500 text-white';
             case 'In Stock':
-                return 'bg-green-600 text-white';
+                return 'bg-gray-600 text-white';
             default:
-                return 'bg-green-600 text-white'; // Default to in stock if not specified
+                return 'bg-gray-600 text-white'; // Default to grey if not specified
         }
     };
 
