@@ -57,7 +57,7 @@ const Footer = () => {
         </div>
 <div>
             <hr />
-            <div className='flex justify-between items-center py-5'>
+            <div className='flex justify-between items-center py-5 pr-16 sm:pr-4'>
                 <p className='text-sm text-center flex-1'>Copyright 2024@ OgeeEra.lk - All Rights Reserved.</p>
                 <div className='flex flex-col items-center gap-1'>
                     <span className='text-xs text-gray-600'>Powered by</span>
