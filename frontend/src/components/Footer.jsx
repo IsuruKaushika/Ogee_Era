@@ -55,10 +55,17 @@ const Footer = () => {
                 </div>
             </div>
         </div>
-        <div>
+<div>
             <hr />
-            <p className='py-5 text-sm text-center'>Copyright 2024@ OgeeEra.lk - All Rights Reserved.</p>
-         
+            <div className='flex justify-between items-center py-5'>
+                <p className='text-sm text-center flex-1'>Copyright 2024@ OgeeEra.lk - All Rights Reserved.</p>
+                <div className='flex items-center gap-2'>
+                    <span className='text-sm text-gray-600'>Powered by</span>
+                    <a href="https://yourcompanywebsite.com" target="_blank" rel="noopener noreferrer">
+                        <img src={assets.company} alt="Company Logo" className='h-6 w-auto hover:opacity-80 transition-opacity cursor-pointer' />
+                    </a>
+                </div>
+            </div>
         </div>
         <div>
             <hr />
