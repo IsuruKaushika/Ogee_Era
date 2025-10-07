@@ -61,7 +61,7 @@ const Footer = () => {
                 <p className='text-sm text-center flex-1'>Copyright 2024@ OgeeEra.lk - All Rights Reserved.</p>
                 <div className='flex flex-col items-center gap-1'>
                     <span className='text-xs text-gray-600'>Powered by</span>
-                    <a href="https://yourcompanywebsite.com" target="_blank" rel="noopener noreferrer">
+                    <a href="https://kausuru-frontend.vercel.app/" target="_blank" rel="noopener noreferrer">
                         <img src={assets.company} alt="Company Logo" className='h-5 w-auto hover:opacity-80 transition-opacity cursor-pointer' />
                     </a>
                 </div>
