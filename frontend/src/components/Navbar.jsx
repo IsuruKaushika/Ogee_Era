@@ -93,7 +93,7 @@ const Navbar = () => {
                   }}
                   className="cursor-pointer hover:text-black"
                 >
-                  Logout
+                  Login/Logout
                 </p>
               </div>
             </div>
