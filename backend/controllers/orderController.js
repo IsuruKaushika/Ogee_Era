@@ -42,6 +42,18 @@ const placeOrder = async(req, res) => {
 // Creating pending order for Payhere payment
 const createPendingOrder = async(req, res) => {
     try {
+            const {userId, items, amount, address} = req.body;
+
+        const orderData = {
+            userId,
+            items,
+            address,
+            amount,
+            paymentMethod: "Payhere",
+            payment: true,
+            date: Date.now()
+        }
+
         
         // Generate the PayHere hash following their specifications
         // First hash the merchant secret
