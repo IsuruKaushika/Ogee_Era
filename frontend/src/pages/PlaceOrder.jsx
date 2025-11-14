@@ -184,7 +184,7 @@ const PlaceOrder = () => {
               payhereResponse.data.sandbox,
               payhereResponse.data.hash // Pass the hash from backend
             );
-            //setCartItems({});
+            setCartItems({});
             
           } else {
             toast.error(payhereResponse.data.message || 'Failed to create order');

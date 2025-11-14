@@ -57,7 +57,7 @@ const createPendingOrder = async(req, res) => {
         const newOrder = new orderModel(orderData)
         await newOrder.save()
 
-        await userModel.findByIdAndUpdate(userId, {cartData: {}})
+        await userModel.findByIdAndUpdate(userId)
 
         // Generate the PayHere hash following their specifications
         // First hash the merchant secret
