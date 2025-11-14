@@ -172,7 +172,7 @@ const PlaceOrder = () => {
             {headers: {token}}
           );
           
-          if(payhereResponse.data.success) {
+          /* if(payhereResponse.data.success) {
             // Add order to Google Sheet with pending status
             await addOrderToGoogleSheet(orderData, payhereResponse.data.orderId, "Pending Payment");
             
@@ -188,7 +188,7 @@ const PlaceOrder = () => {
             
           } else {
             toast.error(payhereResponse.data.message || 'Failed to create order');
-          }
+          } */
           break;
 
         default:

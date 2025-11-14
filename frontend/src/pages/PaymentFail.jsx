@@ -9,7 +9,7 @@ const PaymentFailed = () => {
     toast.error("Payment failed or was cancelled.");
 
     const timer = setTimeout(() => {
-      navigate('/cart'); // or navigate('/') to go back to home
+    //  navigate('/cart'); // or navigate('/') to go back to home
     }, 3000);
 
     return () => clearTimeout(timer);
