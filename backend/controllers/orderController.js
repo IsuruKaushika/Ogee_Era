@@ -179,6 +179,10 @@ const payhereSuccess = async(req, res) => {
     try {
         // This endpoint is for user redirect after payment
         // Redirect to orders page or success page
+
+        await newOrder.save()
+
+        await userModel.findByIdAndUpdate(userId, {cartData: {}})
         
         res.json({success: true, message: "Payment completed successfully"});
         
