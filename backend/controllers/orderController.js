@@ -42,23 +42,7 @@ const placeOrder = async(req, res) => {
 // Creating pending order for Payhere payment
 const createPendingOrder = async(req, res) => {
     try {
-        const {userId, items, amount, address} = req.body;
-
-        const orderData = {
-            userId,
-            items,
-            address,
-            amount,
-            paymentMethod: "Payhere",
-            payment: true,
-            date: Date.now()
-        }
-
-        const newOrder = new orderModel(orderData)
-        await newOrder.save()
-
-        await userModel.findByIdAndUpdate(userId)
-
+        
         // Generate the PayHere hash following their specifications
         // First hash the merchant secret
         const hashedSecret = crypto
@@ -177,6 +161,23 @@ const payhereNotify = async(req, res) => {
 // Handle PayHere success return
 const payhereSuccess = async(req, res) => {
     try {
+        const {userId, items, amount, address} = req.body;
+
+        const orderData = {
+            userId,
+            items,
+            address,
+            amount,
+            paymentMethod: "Payhere",
+            payment: true,
+            date: Date.now()
+        }
+
+        const newOrder = new orderModel(orderData)
+        await newOrder.save()
+
+        await userModel.findByIdAndUpdate(userId, {cartData: {}})
+
         // This endpoint is for user redirect after payment
         // Redirect to orders page or success page
         res.json({success: true, message: "Payment completed successfully"});
