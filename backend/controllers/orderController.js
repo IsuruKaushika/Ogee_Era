@@ -55,9 +55,9 @@ const createPendingOrder = async(req, res) => {
         }
 
         const newOrder = new orderModel(orderData)
-        await newOrder.save()
+       // await newOrder.save()
 
-        await userModel.findByIdAndUpdate(userId, {cartData: {}})
+        //await userModel.findByIdAndUpdate(userId, {cartData: {}})
 
         // Generate the PayHere hash following their specifications
         // First hash the merchant secret
@@ -82,7 +82,7 @@ const createPendingOrder = async(req, res) => {
             .toUpperCase();
 
         // Return order ID, PayHere merchant ID, and hash for frontend processing
-        res.json({
+         res.json({
             success: true, 
             message: "Order Created Successfully",
             orderId: newOrder._id,
@@ -90,7 +90,7 @@ const createPendingOrder = async(req, res) => {
             hash: hash,
             currency: currency,
             sandbox: PAYHERE_SANDBOX
-        })
+        }) 
     } catch(error) {
         console.log(error)
         res.json({success: false, message: error.message})
