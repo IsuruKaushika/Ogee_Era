@@ -50,12 +50,13 @@ const createPendingOrder = async(req, res) => {
             address,
             amount,
             paymentMethod: "Payhere",
-            payment: true,
+            payment: false,
+            status: 'Pending Payment',
             date: Date.now()
         }
 
         const newOrder = new orderModel(orderData)
-       // await newOrder.save()
+        await newOrder.save()
 
         //await userModel.findByIdAndUpdate(userId, {cartData: {}})
 
@@ -145,7 +146,7 @@ const payhereNotify = async(req, res) => {
         }
         
         // Update based on status code
-        if (status_code === 2) {  // Payment successful
+        if (status_code === "2") {  // Payment successful
             // Update order status and payment info
             await orderModel.findByIdAndUpdate(order_id, { 
                 status: 'Processing',
@@ -179,7 +180,7 @@ const payhereSuccess = async(req, res) => {
     try {
         // This endpoint is for user redirect after payment
         // Redirect to orders page or success page
-
+        
         await newOrder.save()
 
         await userModel.findByIdAndUpdate(userId, {cartData: {}})
