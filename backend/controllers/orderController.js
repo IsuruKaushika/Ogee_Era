@@ -194,6 +194,9 @@ const payhereSuccess = async(req, res) => {
     }
 }
 
+
+//This endpoint is for user redirect after payment
+
 // Handle PayHere failure return
 const payhereFailure = async(req, res) => {
     try {
