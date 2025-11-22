@@ -112,8 +112,14 @@ const validatePayhereHash = (data, hash) => {
         .replaceAll(',', '');
     
     // Create the message string according to PayHere documentation
-    const message = data.merchant_id + data.order_id + amountFormatted + data.payhere_currency + hashedSecret;
-    
+    const message =
+        data.merchant_id +
+        data.order_id +
+        amountFormatted +
+        data.payhere_currency +
+        data.status_code +      // ✅ add this
+        hashedSecret;
+
     // Create the hash using MD5
     const calculatedHash = crypto
         .createHash('md5')
@@ -181,9 +187,9 @@ const payhereSuccess = async(req, res) => {
         // This endpoint is for user redirect after payment
         // Redirect to orders page or success page
         
-        await newOrder.save()
+        // await newOrder.save()
 
-        await userModel.findByIdAndUpdate(userId, {cartData: {}})
+        // await userModel.findByIdAndUpdate(userId, {cartData: {}})
         
         res.json({success: true, message: "Payment completed successfully"});
         
