@@ -155,7 +155,7 @@ const payhereNotify = async(req, res) => {
         if (status_code === "2") {  // Payment successful
             // Update order status and payment info
             await orderModel.findByIdAndUpdate(order_id, { 
-                status: 'Processing',
+                status: 'Order Placed',
                 payment: true,
                 paymentId: payment_id,
                 paymentDetails: req.body
