@@ -7,10 +7,11 @@ import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
 // Add this import for MD5 hashing if needed for any client-side verification
 import md5 from 'crypto-js/md5';
+import { validatePlaceOrderForm } from "../utils/validatePlaceOrderForm";
 
 const PlaceOrder = () => {
   const [method, setMethod] = useState("cod");
-  const {navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products} = useContext(ShopContext);
+  const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -25,11 +26,13 @@ const PlaceOrder = () => {
     phone: ''
   });
 
+  const [errors, setErrors] = useState({});
+
   const onChangeHandler = (event) => {
     const name = event.target.name;
     const value = event.target.value;
 
-    setFormData(data => ({...data, [name]: value}));
+    setFormData(data => ({ ...data, [name]: value }));
   };
 
   const initiatePayherePayment = (orderData, orderId, merchantId, sandbox, hash) => {
@@ -56,8 +59,8 @@ const PlaceOrder = () => {
     // Create a form and submit it to PayHere
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = sandbox 
-      ? 'https://sandbox.payhere.lk/pay/checkout' 
+    form.action = sandbox
+      ? 'https://sandbox.payhere.lk/pay/checkout'
       : 'https://www.payhere.lk/pay/checkout';
 
     // Create and append input fields for each parameter
@@ -77,13 +80,13 @@ const PlaceOrder = () => {
   const addOrderToGoogleSheet = async (orderData, orderId, status) => {
     try {
       // Format items for Google Sheets
-      const itemsFormatted = orderData.items.map(item => 
+      const itemsFormatted = orderData.items.map(item =>
         `${item.name} (${item.size}) x ${item.quantity}`
       ).join("; ");
-      
+
       // Format address for Google Sheets
       const fullAddress = `${orderData.address.street}, ${orderData.address.city}, ${orderData.address.state}, ${orderData.address.zipcode}, ${orderData.address.country}`;
-      
+
       // Create data object for Google Sheets
       const sheetData = {
         orderId: orderId,
@@ -97,13 +100,13 @@ const PlaceOrder = () => {
         amount: orderData.amount,
         orderedDate: new Date().toISOString()
       };
-      
+
       // Google Apps Script web app URL - Replace with your deployed web app URL
       const googleSheetsUrl = "https://script.google.com/macros/s/AKfycby7DDOdCEGRVUtOPGaULYkqRmFIM-3GJaQYA2Esufme4KOPn0aCTlmFwX18iu5T_vGtIQ/exec";
-      
+
       // Send data to Google Sheets
       const response = await axios.post(googleSheetsUrl, sheetData);
-      
+
       // Log success but don't block the main flow
       console.log("Order added to Google Sheet:", response.data);
     } catch (error) {
@@ -114,23 +117,32 @@ const PlaceOrder = () => {
     }
   };
 
-  const onSubmitHandler = async(event) => {
+  const onSubmitHandler = async (event) => {
     event.preventDefault();
-    
+
     if (isSubmitting) {
       return; // Prevent multiple submissions
     }
-    
+
+    const { isValid, errors: validationErrors } = await validatePlaceOrderForm(formData);
+
+    if (!isValid) {
+      setErrors(validationErrors);
+      toast.error("Please fix the highlighted fields.");
+      return;
+    }
+
+    setErrors({});
     setIsSubmitting(true);
-    
+
     try {
       let orderItems = [];
 
-      for(const items in cartItems) {
-        for(const item in cartItems[items]) {
-          if(cartItems[items][item] > 0) {
+      for (const items in cartItems) {
+        for (const item in cartItems[items]) {
+          if (cartItems[items][item] > 0) {
             const itemInfo = structuredClone(products.find(product => product._id === items));
-            if(itemInfo) {
+            if (itemInfo) {
               itemInfo.size = item;
               itemInfo.quantity = cartItems[items][item];
               orderItems.push(itemInfo);
@@ -138,7 +150,7 @@ const PlaceOrder = () => {
           }
         }
       }
-      
+
       let orderData = {
         userId: localStorage.getItem('userId'), // Assuming you store userId in localStorage
         address: formData,
@@ -146,16 +158,16 @@ const PlaceOrder = () => {
         amount: getCartAmount() + delivery_fee,
         payment_method: method
       };
-      
-      switch(method) {
+
+      switch (method) {
         // API calls COD
         case 'cod':
-          const response = await axios.post(backendUrl + '/api/order/place', orderData, {headers: {token}});
-          
-          if(response.data.success) {
+          const response = await axios.post(backendUrl + '/api/order/place', orderData, { headers: { token } });
+
+          if (response.data.success) {
             // Add order to Google Sheet
             await addOrderToGoogleSheet(orderData, response.data.orderId, "Placed");
-            
+
             toast.success(response.data.message);
             setCartItems({});
             navigate('/orders');
@@ -167,34 +179,34 @@ const PlaceOrder = () => {
         case 'payhere':
           // First create an order with 'pending' status
           const payhereResponse = await axios.post(
-            backendUrl + '/api/order/create-pending', 
-            orderData, 
-            {headers: {token}}
+            backendUrl + '/api/order/create-pending',
+            orderData,
+            { headers: { token } }
           );
-          
-          if(payhereResponse.data.success) {
+
+          if (payhereResponse.data.success) {
             // Add order to Google Sheet with pending status
             await addOrderToGoogleSheet(orderData, payhereResponse.data.orderId, "Pending Payment");
-            
+
             // Initiate PayHere payment with the order ID, merchant ID, and hash received from backend
             initiatePayherePayment(
-              orderData, 
+              orderData,
               payhereResponse.data.orderId,
               payhereResponse.data.merchantId,
               payhereResponse.data.sandbox,
               payhereResponse.data.hash // Pass the hash from backend
             );
             setCartItems({});
-            
+
           } else {
             toast.error(payhereResponse.data.message || 'Failed to create order');
-          } 
+          }
           break;
 
         default:
           break;
       }
-    } catch(error) {
+    } catch (error) {
       console.log(error);
       toast.error('Something went wrong. Please try again.');
     } finally {
@@ -211,23 +223,49 @@ const PlaceOrder = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input required onChange={onChangeHandler} name='firstName' value={formData.firstName} className="border p-2 rounded w-full" type="text" placeholder="First name" />
-          <input required onChange={onChangeHandler} name='lastName' value={formData.lastName} className="border p-2 rounded w-full" type="text" placeholder="Last name" />
+          <div>
+            <input required onChange={onChangeHandler} name='firstName' value={formData.firstName} className={`border p-2 rounded w-full ${errors.firstName ? "border-red-500" : ""}`} type="text" placeholder="First name" />
+            {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
+          </div>
+          <div>
+          <input required onChange={onChangeHandler} name='lastName' value={formData.lastName} className={`border p-2 rounded w-full ${errors.lastName ? "border-red-500" : ""}`} type="text" placeholder="Last name" />
+          {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
+          </div> 
         </div>
-        <input required onChange={onChangeHandler} name='email' value={formData.email} className="border p-2 rounded w-full" type="email" placeholder="Email address" />
-        <input required onChange={onChangeHandler} name='street' value={formData.street} className="border p-2 rounded w-full" type="text" placeholder="Street" />
+        <div>
+        <input required onChange={onChangeHandler} name='email' value={formData.email} className={`border p-2 rounded w-full ${errors.email ? "border-red-500" : ""}`} type="email" placeholder="Email address" />
+        {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+        </div>
+        <div>
+        <input required onChange={onChangeHandler} name='street' value={formData.street} className={`border p-2 rounded w-full ${errors.street ? "border-red-500" : ""}`} type="text" placeholder="Street" />
+        {errors.street && <p className="text-red-500 text-xs">{errors.street}</p>}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+          <input required onChange={onChangeHandler} name='city' value={formData.city} className={`border p-2 rounded w-full ${errors.city ? "border-red-500" : ""}`} type="text" placeholder="City" />
+          {errors.city && <p className="text-red-500 text-xs">{errors.city}</p>}
+          </div>
+          <div>
+          <input required onChange={onChangeHandler} name='state' value={formData.state} className={`border p-2 rounded w-full ${errors.state ? "border-red-500" : ""}`} type="text" placeholder="State" />
+          {errors.state && <p className="text-red-500 text-xs">{errors.state}</p>}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input required onChange={onChangeHandler} name='city' value={formData.city} className="border p-2 rounded w-full" type="text" placeholder="City" />
-          <input required onChange={onChangeHandler} name='state' value={formData.state} className="border p-2 rounded w-full" type="text" placeholder="State" />
+          <div>
+          <input required onChange={onChangeHandler} name='zipcode' value={formData.zipcode} className={`border p-2 rounded w-full ${errors.zipcode ? "border-red-500" : ""}`} type="text" placeholder="Zipcode" />
+          {errors.zipcode && <p className="text-red-500 text-xs">{errors.zipcode}</p>}
+          </div>
+          <div>
+          <input required onChange={onChangeHandler} name='country' value={formData.country} className={`border p-2 rounded w-full ${errors.country ? "border-red-500" : ""}`} type="text" placeholder="Country" />
+          {errors.country && <p className="text-red-500 text-xs">{errors.country}</p>}
+          </div>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input required onChange={onChangeHandler} name='zipcode' value={formData.zipcode} className="border p-2 rounded w-full" type="text" placeholder="Zipcode" />
-          <input required onChange={onChangeHandler} name='country' value={formData.country} className="border p-2 rounded w-full" type="text" placeholder="Country" />
+        <div>
+        <input required onChange={onChangeHandler} name='phone' value={formData.phone} className={`border p-2 rounded w-full ${errors.phone ? "border-red-500" : ""}`} type="tel" placeholder="Phone" />
+        {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
         </div>
-
-        <input required onChange={onChangeHandler} name='phone' value={formData.phone} className="border p-2 rounded w-full" type="tel" placeholder="Phone" />
+        
       </div>
 
       {/* ---------- Right Side (Cart Totals) ---------- */}
@@ -244,14 +282,12 @@ const PlaceOrder = () => {
             {/* PayHere Payment */}
             <div
               onClick={() => setMethod("payhere")}
-              className={`flex items-center gap-3 border p-2 px-3 cursor-pointer ${
-                method === "payhere" ? "border-green-500" : "border-gray-300"
-              }`}
+              className={`flex items-center gap-3 border p-2 px-3 cursor-pointer ${method === "payhere" ? "border-green-500" : "border-gray-300"
+                }`}
             >
               <p
-                className={`w-3.5 h-3.5 border rounded-full ${
-                  method === "payhere" ? "bg-green-400" : "bg-gray-300"
-                }`}
+                className={`w-3.5 h-3.5 border rounded-full ${method === "payhere" ? "bg-green-400" : "bg-gray-300"
+                  }`}
               ></p>
               <p className="text-blue-600 text-sm font-medium mx-4">CARD PAYMENT</p>
             </div>
@@ -259,14 +295,12 @@ const PlaceOrder = () => {
             {/* Cash on Delivery (COD) */}
             <div
               onClick={() => setMethod("cod")}
-              className={`flex items-center gap-3 border p-2 px-3 cursor-pointer ${
-                method === "cod" ? "border-green-500" : "border-gray-300"
-              }`}
+              className={`flex items-center gap-3 border p-2 px-3 cursor-pointer ${method === "cod" ? "border-green-500" : "border-gray-300"
+                }`}
             >
               <p
-                className={`w-3.5 h-3.5 border rounded-full ${
-                  method === "cod" ? "bg-green-400" : "bg-gray-300"
-                }`}
+                className={`w-3.5 h-3.5 border rounded-full ${method === "cod" ? "bg-green-400" : "bg-gray-300"
+                  }`}
               ></p>
               <p className="text-gray-500 text-sm font-medium mx-4">CASH ON DELIVERY</p>
             </div>
@@ -274,10 +308,10 @@ const PlaceOrder = () => {
         </div>
 
         {/* ---- Place Order Button ---- */}
-        <button 
-          type='submit' 
-          disabled={isSubmitting}
-          className={`w-full mt-6 ${isSubmitting ? 'bg-gray-500' : 'bg-black hover:bg-gray-800'} text-white py-3 rounded-md text-lg font-medium transition`}
+        <button
+          type='submit'
+          disabled={isSubmitting || getCartAmount() === 0}
+          className={`w-full mt-6 ${isSubmitting ? 'bg-gray-500' : 'bg-black hover:bg-gray-800'} text-white py-3 rounded-md text-lg font-medium transition disabled:cursor-not-allowed disabled:bg-gray-500`}
         >
           {isSubmitting ? 'Processing...' : (method === 'payhere' ? 'Pay Now' : 'Place Order')}
         </button>

@@ -23,8 +23,9 @@ const Navbar = () => {
   }
 
   return (
-    <div className="flex items-center justify-between py-5 font-medium relative">
-      {/* Logo */}
+    <div className="fixed top-0 left-0 right-0 flex items-center font-medium z-50 border-b border-gray-200 bg-white px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] h-24 ">
+      <div className="relative flex items-center justify-between w-full mx-auto">
+        {/* Logo */}
       <Link to="/">
         <img src={assets.logo} className="w-20" alt="Logo" />
       </Link>
@@ -161,6 +162,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   )
 }

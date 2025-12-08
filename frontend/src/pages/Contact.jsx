@@ -48,7 +48,7 @@ const Contact = () => {
 
   return (
     <div className="bg-gray-50">
-      <div className='text-center text-2xl pt-10 border-t'>
+      <div className='text-center text-2xl pt-10'>
         <Title text1={'CONTACT'} text2={'US'} />
         <p className="text-gray-600 max-w-2xl mx-auto mt-4 px-4">
           We'd love to hear from you! Whether you have a question about our products, orders, or anything else, our team is ready to answer all your inquiries.

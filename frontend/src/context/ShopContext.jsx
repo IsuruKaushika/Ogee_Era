@@ -29,19 +29,27 @@ const ShopContextProvider = (props) => {
         }
 
         let cartData = structuredClone(cartItems);
-        
+        let isFirstTime = false;
+
         if(cartData[itemId]){
             if(cartData[itemId][size]){
                 cartData[itemId][size] += 1;
             }else{
                 cartData[itemId][size] = 1;
+                isFirstTime = true;
+
             }
         }
         else{
             cartData[itemId] = {};
             cartData[itemId][size] = 1;
+            isFirstTime = true;
         }
         setCartItems(cartData);
+
+        if(isFirstTime){
+            toast.success('Item added to cart', { position: 'top-center', autoClose: 2000 });
+        }
 
         if(token){
             try{

@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { ShopContext } from '../context/ShopContext'
 
 const Hero = () => {
-  const { products } = useContext(ShopContext);
+  const { products,navigate } = useContext(ShopContext);
   const [bestSellerImages, setBestSellerImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -136,7 +136,7 @@ const Hero = () => {
               </h1>
               
               <div className='flex items-center gap-2 animate-slide-in-bottom' style={{animationDelay: '0.8s'}}>
-                <p className='font-semibold text-sm md:text-base hover:text-gray-600 transition-colors duration-300 cursor-pointer'>SHOP NOW</p>
+                <p className='font-semibold text-sm md:text-base hover:text-gray-600 transition-colors duration-300 cursor-pointer' onClick={() => navigate("/collection")}>SHOP NOW</p>
                 <p className='w-8 md:w-11 h-[1px] bg-[#414141] animate-expand-width' style={{animationDelay: '1s'}}></p>
               </div>
               
@@ -150,7 +150,7 @@ const Hero = () => {
           </div>
         </div>
         
-        <style jsx>{`
+        <style>{`
           @keyframes fade-in-left {
             from {
               opacity: 0;
