@@ -68,7 +68,7 @@ const Edit = ({ token }) => {
           
           setLoading(false);
         } else {
-          throw new Error('Product not found');
+          throw new Error('Product not found',error);
         }
       } catch (error) {
         console.error('Fetch product error:', error);

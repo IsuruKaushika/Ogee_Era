@@ -104,6 +104,7 @@ const Add = ({ token }) => {
   const [category, setCategory] = useState('Men');
   const [subCategory, setSubCategory] = useState('TopWear');
   const [price, setPrice] = useState('');
+  const [discount, setDiscount] = useState('');
   const [sizes, setSizes] = useState([]);
   const [bestseller, setBestseller] = useState(false);
   const [hasSizeChart, setHasSizeChart] = useState(false);
@@ -251,6 +252,7 @@ const Add = ({ token }) => {
   const resetForm = () => {
     setName('');
     setDescription('');
+    setDiscount('');
     setPrice('');
     setImage1(false);
     setImage2(false);
@@ -400,6 +402,11 @@ const Add = ({ token }) => {
         <p>Product Description</p>
         <textarea onChange={(e) => setDescription(e.target.value)} value={description} className='w-full max-w-[500px] px-3 py-2' type='text' placeholder='Write Content Here' required />
       </div>
+      <div className='w-full'>
+        <p>Product Discount (%)</p>
+        <input onChange={(e) => setDiscount(e.target.value)} value={discount} className='w-full max-w-[500px] px-3 py-2' type='number' placeholder='0' min="0" max="100" />
+      </div>
+      
       <div className='flex flex-col sm:flex-row gap-2 w-full sm:gap-8'>
         <div>
           <p className='mb-2'>Product Category</p>

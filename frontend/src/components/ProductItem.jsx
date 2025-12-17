@@ -4,7 +4,7 @@ import { ShopContext } from '../context/ShopContext';
 import { useContext } from 'react';
 import { BsCartPlus  } from "react-icons/bs";
 
-const ProductItem = ({id, image, name, price, stockStatus}) => {
+const ProductItem = ({id, image, name, price, stockStatus, discount}) => {
     const {currency} = useContext(ShopContext);
 
     // Function to determine stock status styling
@@ -39,6 +39,14 @@ const ProductItem = ({id, image, name, price, stockStatus}) => {
         <Link className='text-gray-700 cursor-pointer' to={`/product/${id}`}>
             <div className='overflow-hidden relative'>
                 <img className='hover:scale-110 transition ease-in-out' src={image[0]} alt=" "/>
+                {/* Discount Badge */}
+                { (
+                    <div className="absolute top-0 left-0 m-2">
+                        <span className="text-xs font-medium px-2 py-1 inline-block rounded shadow-md bg-gray-900 text-white">
+                            {discount}%
+                        </span>
+                    </div>
+                )}
                 
                 {/* Stock Status Label - Bottom Left Corner of Image */}
                 {stockStatus && (
