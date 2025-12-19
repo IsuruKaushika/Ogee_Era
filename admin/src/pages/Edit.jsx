@@ -25,6 +25,7 @@ const Edit = ({ token }) => {
   const [category, setCategory] = useState('Men');
   const [subCategory, setSubCategory] = useState('TopWear');
   const [price, setPrice] = useState('');
+  const [discount, setDiscount] = useState(0);
   const [sizes, setSizes] = useState([]);
   const [bestseller, setBestseller] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -36,16 +37,18 @@ const Edit = ({ token }) => {
       try {
         setLoading(true);
         // Add trailing slash to backendUrl if needed
-        const baseUrl = backendUrl.endsWith('/') ? backendUrl : `${backendUrl}/`;
-        
-        console.log('Fetching product with ID:', id);
+        const baseUrl = backendUrl.endsWith("/")
+          ? backendUrl
+          : `${backendUrl}/`;
+
+        console.log("Fetching product with ID:", id);
         // Using the correct endpoint that matches your API route
-        const response = await axios.get(`${baseUrl}api/product/${id}`, {
-          headers: { token }
+        const response = await axios.get(backendUrl + `/api/product/${id}`, {
+          headers: { token },
         });
-        
-        console.log('API Response:', response.data);
-        
+
+        console.log("API Response:", response.data);
+
         const product = response.data.product;
 
         if (product) {
@@ -56,6 +59,7 @@ const Edit = ({ token }) => {
           setPrice(product.price);
           setSizes(product.sizes || []);
           setBestseller(product.bestseller);
+          setDiscount(product.discount || 0);
 
           // Handle image array structure from backend
           // Your backend stores images in an array called 'image'
@@ -63,17 +67,18 @@ const Edit = ({ token }) => {
             image1: product.image?.[0] || null,
             image2: product.image?.[1] || null,
             image3: product.image?.[2] || null,
-            image4: product.image?.[3] || null
+            image4: product.image?.[3] || null,
           });
-          
+
           setLoading(false);
         } else {
-          throw new Error('Product not found',error);
+          console.error("Product notfound in response", response.data);
+          throw new Error("Product not found");
         }
       } catch (error) {
-        console.error('Fetch product error:', error);
-        setError(error.response?.data?.message || 'Failed to load product');
-        toast.error(error.response?.data?.message || 'Failed to load product');
+        console.error("Fetch product error:", error);
+        setError(error.response?.data?.message || "Failed to load product");
+        toast.error(error.response?.data?.message || "Failed to load product");
         setLoading(false);
       }
     };
@@ -93,17 +98,17 @@ const Edit = ({ token }) => {
       1: setImage1,
       2: setImage2,
       3: setImage3,
-      4: setImage4
+      4: setImage4,
     };
-    
+
     // Use the correct setter function
     setters[imageNumber](file);
-    
+
     // Update display image
     const imageKey = `image${imageNumber}`;
     setDisplayImages((prev) => ({
       ...prev,
-      [imageKey]: URL.createObjectURL(file)
+      [imageKey]: URL.createObjectURL(file),
     }));
   };
 
@@ -112,51 +117,60 @@ const Edit = ({ token }) => {
 
     try {
       const formData = new FormData();
-      formData.append('name', name);
-      formData.append('description', description);
-      formData.append('category', category);
-      formData.append('subCategory', subCategory);
-      formData.append('price', price);
-      formData.append('sizes', JSON.stringify(sizes));
-      formData.append('bestseller', bestseller);
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("category", category);
+      formData.append("subCategory", subCategory);
+      formData.append("price", price);
+      formData.append("sizes", JSON.stringify(sizes));
+      formData.append("bestseller", bestseller.toString());
+      formData.append("discount", discount.toString());
 
-      if (image1) formData.append('image1', image1);
-      if (image2) formData.append('image2', image2);
-      if (image3) formData.append('image3', image3);
-      if (image4) formData.append('image4', image4);
+      if (image1) formData.append("image1", image1);
+      if (image2) formData.append("image2", image2);
+      if (image3) formData.append("image3", image3);
+      if (image4) formData.append("image4", image4);
 
-      const toastId = toast.loading('Updating product...');
-      
+      const toastId = toast.loading("Updating product...");
+
       // Add trailing slash to backendUrl if needed
-      const baseUrl = backendUrl.endsWith('/') ? backendUrl : `${backendUrl}/`;
+      const baseUrl = backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`;
 
-      const response = await axios.put(`${baseUrl}api/product/${id}`, formData, {
-        headers: { token }
-      });
+      const response = await axios.put(
+        backendUrl + `/api/product/${id}`,
+        formData,
+        {
+          headers: { token },
+        }
+      );
 
       if (response.data.success) {
         toast.update(toastId, {
           render: response.data.message,
-          type: 'success',
+          type: "success",
           isLoading: false,
-          autoClose: 5000
+          autoClose: 5000,
         });
       } else {
         toast.update(toastId, {
           render: response.data.message,
-          type: 'error',
+          type: "error",
           isLoading: false,
-          autoClose: 5000
+          autoClose: 5000,
         });
       }
     } catch (error) {
-      console.error('Update product error:', error);
-      toast.error(error.response?.data?.message || 'Failed to update product');
+      console.error("Update product error:", error);
+      toast.error(error.response?.data?.message || "Failed to update product");
     }
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading product data...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        Loading product data...
+      </div>
+    );
   }
 
   if (error) {
@@ -164,7 +178,10 @@ const Edit = ({ token }) => {
   }
 
   return (
-    <form onSubmit={onSubmitHandler} className="flex flex-col w-full items-start gap-3">
+    <form
+      onSubmit={onSubmitHandler}
+      className="flex flex-col w-full items-start gap-3"
+    >
       <div>
         <p className="mb-2">Edit Images</p>
         <div className="flex gap-2">
@@ -186,7 +203,6 @@ const Edit = ({ token }) => {
           ))}
         </div>
       </div>
-
       <div className="w-full">
         <p>Product Name</p>
         <input
@@ -197,7 +213,6 @@ const Edit = ({ token }) => {
           required
         />
       </div>
-
       <div className="w-full">
         <p>Product Description</p>
         <textarea
@@ -207,7 +222,6 @@ const Edit = ({ token }) => {
           required
         />
       </div>
-
       <div className="flex flex-col sm:flex-row gap-2 w-full sm:gap-8">
         <div>
           <p className="mb-2">Product Category</p>
@@ -249,6 +263,28 @@ const Edit = ({ token }) => {
           />
         </div>
       </div>
+      <div className='flex gap-4'>
+      <div className="w-full">
+        <p>Discount (%)</p>
+        <input
+          type="float"
+          min="0"
+          max="100"
+          value={discount}
+          onChange={(e) => setDiscount(e.target.value)}
+          className="w-full max-w-[180px] px-3 py-2"
+        />
+      </div>
+      <div className="w-full">
+        <p>Final Price After Discount</p>
+        <input
+          type="number"
+          value={((price * (100 - discount)) / 100).toFixed(2)}
+          readOnly
+          className="w-full max-w-[180px] px-3 py-2 bg-gray-100"
+        />
+        </div>
+      </div>
 
       <div>
         <p className="mb-2">Product Sizes</p>
@@ -275,7 +311,6 @@ const Edit = ({ token }) => {
           ))}
         </div>
       </div>
-
       <div className="flex gap-2 mt-2">
         <input
           onChange={() => setBestseller((prev) => !prev)}
@@ -287,7 +322,6 @@ const Edit = ({ token }) => {
           Add to BestSeller
         </label>
       </div>
-
       <button type="submit" className="w-28 py-3 mt-4 bg-black text-white">
         Update
       </button>

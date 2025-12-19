@@ -62,6 +62,82 @@ const addProduct = async(req, res) => {
     }
 }
 
+// UPDATE PRODUCT
+const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      name,
+      description,
+      price,
+      category,
+      subCategory,
+      sizes,
+      bestseller,
+      discount
+    } = req.body;
+
+    const product = await productModel.findById(id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    // Handle images (replace only if new ones are uploaded)
+    const image1 = req.files?.image1?.[0];
+    const image2 = req.files?.image2?.[0];
+    const image3 = req.files?.image3?.[0];
+    const image4 = req.files?.image4?.[0];
+
+    let updatedImages = [...product.image];
+
+    const uploadToCloudinary = async (file, index) => {
+      const result = await cloudinary.uploader.upload(file.path, {
+        resource_type: "image"
+      });
+      updatedImages[index] = result.secure_url;
+    };
+
+    if (image1) await uploadToCloudinary(image1, 0);
+    if (image2) await uploadToCloudinary(image2, 1);
+    if (image3) await uploadToCloudinary(image3, 2);
+    if (image4) await uploadToCloudinary(image4, 3);
+
+    // Update fields
+    product.name = name;
+    product.description = description;
+    product.price = Number(price);
+    product.category = category;
+    product.subCategory = subCategory;
+    product.sizes = JSON.parse(sizes);
+    product.bestseller = bestseller === "true" || bestseller === true;
+    product.image = updatedImages;
+    if (discount !== undefined) {
+      product.discount = Number(discount);
+    }
+
+    await product.save();
+
+    res.json({
+      success: true,
+      message: "Product updated successfully",
+      product
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
 //list product
 // List products sorted by most recent (newest first)
 const listProducts = async (req, res) => {
@@ -87,16 +163,28 @@ const removeProduct = async(req, res) => {
 }
 
 //single product info
-const singleProduct = async(req, res) => {
-    try {
-        const {productId} = req.body
-        const product = await productModel.findById(productId)
-        res.json({success: true, product})
-    } catch(error) {
-        console.log(error)
-        res.json({success: false, message: error.message})
+const singleProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await productModel.findById(id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
     }
-}
+
+    res.json({ success: true, product });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 
 // Update product stock status
 const updateStockStatus = async(req, res) => {
@@ -123,5 +211,6 @@ export {
     removeProduct, 
     listProducts, 
     addProduct,
+    updateProduct,
     updateStockStatus // New function export
 }
