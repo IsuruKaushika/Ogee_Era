@@ -6,53 +6,65 @@ import axios from 'axios'
 
 const Login = () => {
   const [currentState, setCurrentState] = useState('Login')
-  const { token, setToken, navigate, backendUrl } = useContext(ShopContext)
+  const { token, setToken, navigate, backendUrl, getUserCart } =
+    useContext(ShopContext);
 
-  const [name, setName] = useState('')
-  const [password, setPassword] = useState('')
-  const [email, setEmail] = useState('')
-  const [newPassword, setNewPassword] = useState('')
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   const onSubmitHandler = async (event) => {
-    event.preventDefault()
+    event.preventDefault();
     try {
-      if (currentState === 'Sign Up') {
-        const response = await axios.post(backendUrl + '/api/user/register', { name, email, password })
-        if (response.data.success) {
-          setToken(response.data.token)
-          localStorage.setItem('token', response.data.token)
-          toast.success('Registered successfully!')
-        } else {
-          toast.error(response.data.message)
-        }
-      } else if (currentState === 'Login') {
-        const response = await axios.post(backendUrl + '/api/user/login', { email, password })
-        if (response.data.success) {
-          setToken(response.data.token)
-          localStorage.setItem('token', response.data.token)
-          toast.success('Logged in successfully!')
-        } else {
-          toast.error(response.data.message)
-        }
-      } else if (currentState === 'Forgot Password') {
-        // Reset password directly
-        const response = await axios.post(backendUrl + '/api/user/reset-password', {
+      if (currentState === "Sign Up") {
+        const response = await axios.post(backendUrl + "/api/user/register", {
+          name,
           email,
-          newPassword
-        })
+          password,
+        });
         if (response.data.success) {
-          toast.success('Password reset successfully!')
-          setCurrentState('Login')
-          setNewPassword('')
+          setToken(response.data.token);
+          localStorage.setItem("token", response.data.token);
+          toast.success("Registered successfully!");
         } else {
-          toast.error(response.data.message || 'Failed to reset password')
+          toast.error(response.data.message);
+        }
+      } else if (currentState === "Login") {
+        const response = await axios.post(backendUrl + "/api/user/login", {
+          email,
+          password,
+        });
+        if (response.data.success) {
+          setToken(response.data.token);
+          localStorage.setItem("token", response.data.token);
+          toast.success("Logged in successfully!");
+          getUserCart(response.data.token);
+        } else {
+          toast.error(response.data.message);
+        }
+      } else if (currentState === "Forgot Password") {
+        // Reset password directly
+        const response = await axios.post(
+          backendUrl + "/api/user/reset-password",
+          {
+            email,
+            newPassword,
+          }
+        );
+        if (response.data.success) {
+          toast.success("Password reset successfully!");
+          setCurrentState("Login");
+          setNewPassword("");
+        } else {
+          toast.error(response.data.message || "Failed to reset password");
         }
       }
     } catch (error) {
-      console.log(error)
-      toast.error(error.message || 'An error occurred')
+      console.log(error);
+      toast.error(error.message || "An error occurred");
     }
-  }
+  };
 
   useEffect(() => {
     if (token) {

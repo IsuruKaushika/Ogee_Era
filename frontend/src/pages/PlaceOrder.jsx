@@ -11,19 +11,29 @@ import { validatePlaceOrderForm } from "../utils/validatePlaceOrderForm";
 
 const PlaceOrder = () => {
   const [method, setMethod] = useState("cod");
-  const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
+  const {
+    navigate,
+    backendUrl,
+    token,
+    cartItems,
+    setCartItems,
+    getCartAmount,
+    getCartDiscount,
+    delivery_fee,
+    products,
+  } = useContext(ShopContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    street: '',
-    city: '',
-    state: '',
-    zipcode: '',
-    country: '',
-    phone: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    street: "",
+    city: "",
+    state: "",
+    zipcode: "",
+    country: "",
+    phone: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -32,10 +42,16 @@ const PlaceOrder = () => {
     const name = event.target.name;
     const value = event.target.value;
 
-    setFormData(data => ({ ...data, [name]: value }));
+    setFormData((data) => ({ ...data, [name]: value }));
   };
 
-  const initiatePayherePayment = (orderData, orderId, merchantId, sandbox, hash) => {
+  const initiatePayherePayment = (
+    orderData,
+    orderId,
+    merchantId,
+    sandbox,
+    hash
+  ) => {
     const paymentObject = {
       sandbox: sandbox, // Will be true in development, false in production
       merchant_id: merchantId,
@@ -43,7 +59,9 @@ const PlaceOrder = () => {
       cancel_url: `${window.location.origin}/payment-failed`,
       notify_url: `${backendUrl}/api/order/payhere-notify`,
       order_id: orderId,
-      items: orderData.items.map(item => `${item.name} (${item.size})`).join(", "),
+      items: orderData.items
+        .map((item) => `${item.name} (${item.size})`)
+        .join(", "),
       amount: orderData.amount,
       currency: "LKR", // Replace with your currency if different
       first_name: orderData.address.firstName,
@@ -57,16 +75,16 @@ const PlaceOrder = () => {
     };
 
     // Create a form and submit it to PayHere
-    const form = document.createElement('form');
-    form.method = 'POST';
+    const form = document.createElement("form");
+    form.method = "POST";
     form.action = sandbox
-      ? 'https://sandbox.payhere.lk/pay/checkout'
-      : 'https://www.payhere.lk/pay/checkout';
+      ? "https://sandbox.payhere.lk/pay/checkout"
+      : "https://www.payhere.lk/pay/checkout";
 
     // Create and append input fields for each parameter
     Object.entries(paymentObject).forEach(([key, value]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
+      const input = document.createElement("input");
+      input.type = "hidden";
       input.name = key;
       input.value = value;
       form.appendChild(input);
@@ -80,9 +98,9 @@ const PlaceOrder = () => {
   const addOrderToGoogleSheet = async (orderData, orderId, status) => {
     try {
       // Format items for Google Sheets
-      const itemsFormatted = orderData.items.map(item =>
-        `${item.name} (${item.size}) x ${item.quantity}`
-      ).join("; ");
+      const itemsFormatted = orderData.items
+        .map((item) => `${item.name} (${item.size}) x ${item.quantity}`)
+        .join("; ");
 
       // Format address for Google Sheets
       const fullAddress = `${orderData.address.street}, ${orderData.address.city}, ${orderData.address.state}, ${orderData.address.zipcode}, ${orderData.address.country}`;
@@ -98,11 +116,12 @@ const PlaceOrder = () => {
         phoneNumber: orderData.address.phone,
         paymentMethod: orderData.payment_method,
         amount: orderData.amount,
-        orderedDate: new Date().toISOString()
+        orderedDate: new Date().toISOString(),
       };
 
       // Google Apps Script web app URL - Replace with your deployed web app URL
-      const googleSheetsUrl = "https://script.google.com/macros/s/AKfycby7DDOdCEGRVUtOPGaULYkqRmFIM-3GJaQYA2Esufme4KOPn0aCTlmFwX18iu5T_vGtIQ/exec";
+      const googleSheetsUrl =
+        "https://script.google.com/macros/s/AKfycby7DDOdCEGRVUtOPGaULYkqRmFIM-3GJaQYA2Esufme4KOPn0aCTlmFwX18iu5T_vGtIQ/exec";
 
       // Send data to Google Sheets
       const response = await axios.post(googleSheetsUrl, sheetData);
@@ -124,7 +143,9 @@ const PlaceOrder = () => {
       return; // Prevent multiple submissions
     }
 
-    const { isValid, errors: validationErrors } = await validatePlaceOrderForm(formData);
+    const { isValid, errors: validationErrors } = await validatePlaceOrderForm(
+      formData
+    );
 
     if (!isValid) {
       setErrors(validationErrors);
@@ -141,7 +162,9 @@ const PlaceOrder = () => {
       for (const items in cartItems) {
         for (const item in cartItems[items]) {
           if (cartItems[items][item] > 0) {
-            const itemInfo = structuredClone(products.find(product => product._id === items));
+            const itemInfo = structuredClone(
+              products.find((product) => product._id === items)
+            );
             if (itemInfo) {
               itemInfo.size = item;
               itemInfo.quantity = cartItems[items][item];
@@ -152,41 +175,53 @@ const PlaceOrder = () => {
       }
 
       let orderData = {
-        userId: localStorage.getItem('userId'), // Assuming you store userId in localStorage
+        userId: localStorage.getItem("userId"), // Assuming you store userId in localStorage
         address: formData,
         items: orderItems,
-        amount: getCartAmount() + delivery_fee,
-        payment_method: method
+        amount: getCartAmount() - getCartDiscount() + delivery_fee,
+        payment_method: method,
       };
 
       switch (method) {
         // API calls COD
-        case 'cod':
-          const response = await axios.post(backendUrl + '/api/order/place', orderData, { headers: { token } });
+        case "cod":
+          const response = await axios.post(
+            backendUrl + "/api/order/place",
+            orderData,
+            { headers: { token } }
+          );
 
           if (response.data.success) {
             // Add order to Google Sheet
-            await addOrderToGoogleSheet(orderData, response.data.orderId, "Placed");
+            await addOrderToGoogleSheet(
+              orderData,
+              response.data.orderId,
+              "Placed"
+            );
 
             toast.success(response.data.message);
             setCartItems({});
-            navigate('/orders');
+            navigate("/orders");
           } else {
             toast.error(response.data.message);
           }
           break;
 
-        case 'payhere':
+        case "payhere":
           // First create an order with 'pending' status
           const payhereResponse = await axios.post(
-            backendUrl + '/api/order/create-pending',
+            backendUrl + "/api/order/create-pending",
             orderData,
             { headers: { token } }
           );
 
           if (payhereResponse.data.success) {
             // Add order to Google Sheet with pending status
-            await addOrderToGoogleSheet(orderData, payhereResponse.data.orderId, "Pending Payment");
+            await addOrderToGoogleSheet(
+              orderData,
+              payhereResponse.data.orderId,
+              "Pending Payment"
+            );
 
             // Initiate PayHere payment with the order ID, merchant ID, and hash received from backend
             initiatePayherePayment(
@@ -197,9 +232,10 @@ const PlaceOrder = () => {
               payhereResponse.data.hash // Pass the hash from backend
             );
             setCartItems({});
-
           } else {
-            toast.error(payhereResponse.data.message || 'Failed to create order');
+            toast.error(
+              payhereResponse.data.message || "Failed to create order"
+            );
           }
           break;
 
@@ -208,7 +244,7 @@ const PlaceOrder = () => {
       }
     } catch (error) {
       console.log(error);
-      toast.error('Something went wrong. Please try again.');
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

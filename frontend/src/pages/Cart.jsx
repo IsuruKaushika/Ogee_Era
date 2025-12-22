@@ -1,87 +1,163 @@
 import React, { useEffect } from 'react'
-import { useContext } from 'react';
-import { useState } from 'react';
-import { ShopContext } from '../context/ShopContext'
-import { assets } from '../assets/assets'
-import Title from '../components/Title'
+import { Link } from "react-router-dom";
+import { useContext } from "react";
+import { useState } from "react";
+import { ShopContext } from "../context/ShopContext";
+import { assets } from "../assets/assets";
+import Title from "../components/Title";
 
-import CartTotal from '../components/CartTotal'
-
+import CartTotal from "../components/CartTotal";
+import { toast } from "react-toastify";
 
 const Cart = () => {
+  const { products, currency, cartItems, updateQuantity, navigate, token } =
+    useContext(ShopContext);
 
-  const {products,currency,cartItems,updateQuantity,navigate} =useContext(ShopContext);
+  const [cartData, setCartData] = useState([]);
 
-  const [cartData,setCartData] = useState([]);
-
-  useEffect(()=>{
-
-    if(products.length>0){
+  useEffect(() => {
+    if (products.length > 0) {
       const tempData = [];
-    for(const items in cartItems){
-      for(const item in cartItems[items] ){
-        if(cartItems[items][item]>0){
-          tempData.push({
-            _id:items,
-            size:item,
-            quantity:cartItems[items][item]
-
-          })
+      for (const items in cartItems) {
+        for (const item in cartItems[items]) {
+          if (cartItems[items][item] > 0) {
+            tempData.push({
+              _id: items,
+              size: item,
+              quantity: cartItems[items][item],
+            });
+          }
         }
       }
+      setCartData(tempData);
     }
-    setCartData(tempData  );
-
-    }
-  },[cartItems,products])
+  }, [cartItems, products]);
 
   return (
-    <div className ='border-t pt-14'>
-      <div className ='text-2xl mb-3'>
-        <Title text1={'YOUR'} text2={'CART'}/>
+    <div className="border-t pt-14">
+      <div className="text-2xl mb-3">
+        <Title text1={"YOUR"} text2={"CART"} />
       </div>
       <div>
-        {
-        cartData.map((item,index)=>{
-          const productData =products.find((product)=>product._id === item._id);
+        {cartData.map((item, index) => {
+          const productData = products.find(
+            (product) => product._id === item._id
+          );
 
-          return(
-            <div key={index} className='py-4 border-t border-b text-gray-700 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4'>
-              <div className ='flex items-start gap-6'>
-                <img className='w-16 sm:w-20' src={productData.image[0]} alt=""/>
+          return (
+            <div
+              key={index}
+              className="py-4 border-t border-b text-gray-700 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4"
+            >
+              <div className="flex items-start gap-6">
+                <Link
+                  className="cursor-pointer"
+                  to={`/product/${productData._id}`}
+                >
+                  <img
+                    className="w-16 sm:w-20"
+                    src={productData.image[0]}
+                    alt=""
+                    onClick={navigate}
+                  />
+                </Link>
                 <div>
-                  <p className='text-xs sm:text-lg font-medium'>{productData.name}</p>
-                  <div className='flex items center gap-5 mt-2'>
-                    <p>{currency}{productData.price}</p>
-                    <p className='px-2 sm:px-3 sm:py-1 border bg-slate'>{item.size}</p>
+                  <Link
+                    className="cursor-pointer"
+                    to={`/product/${productData._id}`}
+                  >
+                    <p className="text-xs sm:text-lg font-medium">
+                      {productData.name}
+                    </p>
+                  </Link>
+                  <div className="flex items center gap-5 mt-2">
+                    <div className="flex items-center gap-2">
+                      {productData.discount > 0 ? (
+                        <>
+                          <p className="">
+                            {currency}
+                            {(
+                              productData.price *
+                              (1 - productData.discount / 100)
+                            ).toFixed(2)}
+                          </p>
+                          <p className="line-through text-gray-400">
+                            {currency}
+                            {productData.price}
+                          </p>
+                        </>
+                      ) : (
+                        <p>
+                          {currency}
+                          {productData.price}
+                        </p>
+                      )}
+                    </div>
+                    <p className="px-2 sm:px-3 sm:py-1 border bg-slate">
+                      {item.size}
+                    </p>
                   </div>
                 </div>
-                </div>
-                <input onChange={(e)=> e.target.value === '' || e.target.value ==='0' ? null : updateQuantity(item._id,item.size,Number(e.target.value))}   className='border max-w-10 sm:max-w-20 px-1 sm:px-2 py-1' type ='number' min={1} defaultValue={item.quantity}/>
-               <img onClick={() => updateQuantity(item._id, item.size, 0)} className="w-4 mr-4 sm:w-5 cursor-pointer" src={assets.bin_icon} alt="" />
-
-              </div> 
-          )
-
-        })
-      }
-      {cartData.length ===0 &&(
-        <div className='text-center my-20'>
-          <p className='text-gray-600 mb-6'>Your cart is currently empty.</p>
-          <button onClick={()=>navigate('/collection')} className='bg-black text-white px-6 py-3 text-sm'>CONTINUE SHOPPING</button>
-        </div>
-      )}
+              </div>
+              <input
+                onChange={(e) =>
+                  e.target.value === "" || e.target.value === "0"
+                    ? null
+                    : updateQuantity(
+                        item._id,
+                        item.size,
+                        Number(e.target.value)
+                      )
+                }
+                className="border max-w-10 sm:max-w-20 px-1 sm:px-2 py-1"
+                type="number"
+                min={1}
+                defaultValue={item.quantity}
+              />
+              <img
+                onClick={() => updateQuantity(item._id, item.size, 0)}
+                className="w-4 mr-4 sm:w-5 cursor-pointer"
+                src={assets.bin_icon}
+                alt=""
+              />
+            </div>
+          );
+        })}
+        {cartData.length === 0 && (
+          <div className="text-center my-20">
+            <p className="text-gray-600 mb-6">Your cart is currently empty.</p>
+            <button
+              onClick={() => navigate("/collection")}
+              className="bg-black text-white px-6 py-3 text-sm"
+            >
+              CONTINUE SHOPPING
+            </button>
+          </div>
+        )}
       </div>
-      <div className ='flex justify-end my-20'>
-        <div className='w-full sm:w-[450px]'>
-          <CartTotal/>
-          <div className = 'w-full text-end'>
-            <button onClick={()=>navigate('/place-order')} className ='bg-black text-white text-sm my-8 px-6 py-3 disabled:bg-slate-500 disabled:cursor-not-allowed' disabled={cartData.length === 0}>PROCEED TO CHECKOUT</button>
+      <div className="flex justify-end my-20">
+        <div className="w-full sm:w-[450px]">
+          <CartTotal />
+          <div className="w-full text-end">
+            <button
+              onClick={() => {
+                if (!token) {
+                  toast.warn("Please login first to proceed to checkout");
+                  navigate("/login");
+                } else {
+                  navigate("/place-order");
+                }
+              }}
+              className="bg-black text-white text-sm my-8 px-6 py-3 disabled:bg-slate-500 disabled:cursor-not-allowed"
+              disabled={cartData.length === 0}
+            >
+              PROCEED TO CHECKOUT
+            </button>
           </div>
-          </div>
+        </div>
+      </div>
     </div>
-    </div>
-  )
-}
+  );
+};
 
 export default Cart
