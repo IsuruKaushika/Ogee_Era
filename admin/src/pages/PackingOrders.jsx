@@ -148,8 +148,8 @@ const PackingOrders = ({ token }) => {
     try {
       const response = await axios.post(backendUrl + '/api/order/list', {}, { headers: { token } })
       if (response.data.success) {
-        // Filter to only show "Print Label and Pack" orders
-        const packingOrders = response.data.orders.filter(order => order.status === 'Print Label and Pack')
+        // Filter to only show "Packing" orders
+        const packingOrders = response.data.orders.filter(order => order.status === 'Packing')
         setOrders(packingOrders)
       } else {
         toast.error(response.data.message)
@@ -237,7 +237,7 @@ const PackingOrders = ({ token }) => {
                   className='p-2 font-semibold'
                 >
                   <option value="Order Placed">Order Placed</option>
-                  <option value="Print Label and Pack">Packing</option>
+                  <option value="Packing">Packing</option>
                   <option value="Delivered">Delivered</option>
                 </select>
                 <button

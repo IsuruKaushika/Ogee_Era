@@ -2,6 +2,7 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import { sendOrderConfirmationEmail } from "../config/email.js";
 
 // Load environment variables
 dotenv.config();
@@ -9,177 +10,238 @@ dotenv.config();
 // PayHere credentials from environment variables
 const PAYHERE_MERCHANT_ID = process.env.PAYHERE_MERCHANT_ID;
 const PAYHERE_MERCHANT_SECRET = process.env.PAYHERE_MERCHANT_SECRET;
-const PAYHERE_SANDBOX = process.env.PAYHERE_SANDBOX === 'true';
+const PAYHERE_SANDBOX = process.env.PAYHERE_SANDBOX === "true";
 
-const placeOrder = async(req, res) => {
-    try {
-        const {userId, items, amount, address} = req.body;
+const placeOrder = async (req, res) => {
+  try {
+    const { userId, items, amount, address } = req.body;
 
-        const orderData = {
-            userId,
-            items,
-            address,
-            amount,
-            paymentMethod: "COD",
-            payment: false,
-            date: Date.now()
-            
-        }
+    const orderData = {
+      userId,
+      items,
+      address,
+      amount,
+      paymentMethod: "COD",
+      payment: false,
+      date: Date.now(),
+    };
 
-        const newOrder = new orderModel(orderData)
-        await newOrder.save()
-
-        await userModel.findByIdAndUpdate(userId, {cartData: {}})
-
-        res.json({success: true, message: "Order Placed Successfully"})
-    } catch(error) {
-        console.log(error)
-        res.json({success: false, message: error.message})
+    const newOrder = new orderModel(orderData);
+    await newOrder.save();
+    // Send order confirmation email
+    if (newOrder.paymentMethod === "COD" && newOrder.address?.email) {
+      try {
+        await sendOrderConfirmationEmail({
+          to: newOrder.address.email,
+          orderId: newOrder._id,
+          items: newOrder.items,
+          amount: newOrder.amount,
+          address: newOrder.address,
+          paymentMethod: newOrder.paymentMethod,
+        });
+      } catch (emailErr) {
+        console.error(
+          "Failed to send order confirmation email:",
+          emailErr.message
+        );
+      }
     }
-}
+    await userModel.findByIdAndUpdate(userId, { cartData: {} });
+
+    res.json({ success: true, message: "Order Placed Successfully" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
 
 // Creating pending order for Payhere payment
 // Creating pending order for Payhere payment
-const createPendingOrder = async(req, res) => {
-    try {
-        const {userId, items, amount, address} = req.body;
+const createPendingOrder = async (req, res) => {
+  try {
+    const { userId, items, amount, address } = req.body;
 
-        const orderData = {
-            userId,
-            items,
-            address,
-            amount,
-            paymentMethod: "Payhere",
-            payment: false,
-            status: 'Pending Payment',
-            date: Date.now()
-        }
+    const orderData = {
+      userId,
+      items,
+      address,
+      amount,
+      paymentMethod: "Payhere",
+      payment: false,
+      status: "Pending Payment",
+      date: Date.now(),
+    };
 
-        const newOrder = new orderModel(orderData)
-        await newOrder.save()
+    const newOrder = new orderModel(orderData);
+    await newOrder.save();
 
-        //await userModel.findByIdAndUpdate(userId, {cartData: {}})
+    //await userModel.findByIdAndUpdate(userId, {cartData: {}})
 
-        // Generate the PayHere hash following their specifications
-        // First hash the merchant secret
-        const hashedSecret = crypto
-            .createHash('md5')
-            .update(PAYHERE_MERCHANT_SECRET)
-            .digest('hex')
-            .toUpperCase();
-        
-        // Format amount to ensure it has 2 decimal places
-        const amountFormatted = parseFloat(amount)
-            .toLocaleString('en-us', { minimumFractionDigits: 2 })
-            .replaceAll(',', '');
-        
-        const currency = 'LKR'; // Set your default currency
-        
-        // Create the final hash
-        const hash = crypto
-            .createHash('md5')
-            .update(PAYHERE_MERCHANT_ID + newOrder._id + amountFormatted + currency + hashedSecret)
-            .digest('hex')
-            .toUpperCase();
-
-        // Return order ID, PayHere merchant ID, and hash for frontend processing
-         res.json({
-            success: true, 
-            message: "Order Created Successfully",
-            orderId: newOrder._id,
-            merchantId: PAYHERE_MERCHANT_ID,
-            hash: hash,
-            currency: currency,
-            sandbox: PAYHERE_SANDBOX
-        }) 
-    } catch(error) {
-        console.log(error)
-        res.json({success: false, message: error.message})
-    }
-}
-// Validate PayHere hash
-const validatePayhereHash = (data, hash) => {
+    // Generate the PayHere hash following their specifications
     // First hash the merchant secret
     const hashedSecret = crypto
-        .createHash('md5')
-        .update(PAYHERE_MERCHANT_SECRET)
-        .digest('hex')
-        .toUpperCase();
-    
-    // Format amount to ensure it has 2 decimal places
-    const amountFormatted = parseFloat(data.payhere_amount)
-        .toLocaleString('en-us', { minimumFractionDigits: 2 })
-        .replaceAll(',', '');
-    
-    // Create the message string according to PayHere documentation
-    const message =
-        data.merchant_id +
-        data.order_id +
-        amountFormatted +
-        data.payhere_currency +
-        data.status_code +      // ✅ add this
-        hashedSecret;
+      .createHash("md5")
+      .update(PAYHERE_MERCHANT_SECRET)
+      .digest("hex")
+      .toUpperCase();
 
-    // Create the hash using MD5
-    const calculatedHash = crypto
-        .createHash('md5')
-        .update(message)
-        .digest('hex')
-        .toUpperCase();
-    
-    // Compare the calculated hash with the received hash
-    return calculatedHash === hash;
+    // Format amount to ensure it has 2 decimal places
+    const amountFormatted = parseFloat(amount)
+      .toLocaleString("en-us", { minimumFractionDigits: 2 })
+      .replaceAll(",", "");
+
+    const currency = "LKR"; // Set your default currency
+
+    // Create the final hash
+    const hash = crypto
+      .createHash("md5")
+      .update(
+        PAYHERE_MERCHANT_ID +
+          newOrder._id +
+          amountFormatted +
+          currency +
+          hashedSecret
+      )
+      .digest("hex")
+      .toUpperCase();
+
+    // Return order ID, PayHere merchant ID, and hash for frontend processing
+    res.json({
+      success: true,
+      message: "Order Created Successfully",
+      orderId: newOrder._id,
+      merchantId: PAYHERE_MERCHANT_ID,
+      hash: hash,
+      currency: currency,
+      sandbox: PAYHERE_SANDBOX,
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+// Validate PayHere hash
+const validatePayhereHash = (data, hash) => {
+  // First hash the merchant secret
+  const hashedSecret = crypto
+    .createHash("md5")
+    .update(PAYHERE_MERCHANT_SECRET)
+    .digest("hex")
+    .toUpperCase();
+
+  // Format amount to ensure it has 2 decimal places
+  const amountFormatted = parseFloat(data.payhere_amount)
+    .toLocaleString("en-us", { minimumFractionDigits: 2 })
+    .replaceAll(",", "");
+
+  // Create the message string according to PayHere documentation
+  const message =
+    data.merchant_id +
+    data.order_id +
+    amountFormatted +
+    data.payhere_currency +
+    data.status_code + // ✅ add this
+    hashedSecret;
+
+  // Create the hash using MD5
+  const calculatedHash = crypto
+    .createHash("md5")
+    .update(message)
+    .digest("hex")
+    .toUpperCase();
+
+  // Compare the calculated hash with the received hash
+  return calculatedHash === hash;
 };
 // Handle PayHere payment notification
-const payhereNotify = async(req, res) => {
-    try {
-        const { merchant_id, order_id, payment_id, payhere_amount, status_code, md5sig } = req.body;
-        
-        // Verify merchant ID
-        if (merchant_id !== PAYHERE_MERCHANT_ID) {
-            return res.status(400).json({success: false, message: 'Invalid merchant'});
-        }
-        
-        // Verify hash (MD5 signature)
-        if (!validatePayhereHash(req.body, md5sig)) {
-            return res.status(400).json({success: false, message: 'Invalid signature'});
-        }
-        
-        // Find the order
-        const order = await orderModel.findById(order_id);
-        if (!order) {
-            return res.status(404).json({success: false, message: 'Order not found'});
-        }
-        
-        // Update based on status code
-        if (status_code === "2") {  // Payment successful
-            // Update order status and payment info
-            await orderModel.findByIdAndUpdate(order_id, { 
-                status: 'Order Placed',
-                payment: true,
-                paymentId: payment_id,
-                paymentDetails: req.body
-            });
-            
-            // Clear cart after successful payment
-            await userModel.findByIdAndUpdate(order.userId, {cartData: {}});
-            
-            return res.json({success: true, message: 'Payment verified and order updated'});
-        } else {
-            // Payment failed
-            await orderModel.findByIdAndUpdate(order_id, { 
-                status: 'Failed',
-                paymentId: payment_id,
-                paymentDetails: req.body
-            });
-            
-            return res.json({success: false, message: 'Payment failed or canceled'});
-        }
-    } catch(error) {
-        console.log(error);
-        res.status(500).json({success: false, message: error.message});
+const payhereNotify = async (req, res) => {
+  try {
+    const {
+      merchant_id,
+      order_id,
+      payment_id,
+      payhere_amount,
+      status_code,
+      md5sig,
+    } = req.body;
+
+    // Verify merchant ID
+    if (merchant_id !== PAYHERE_MERCHANT_ID) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid merchant" });
     }
-}
+
+    // Verify hash (MD5 signature)
+    if (!validatePayhereHash(req.body, md5sig)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid signature" });
+    }
+
+    // Find the order
+    const order = await orderModel.findById(order_id);
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+
+    // Update based on status code
+    if (status_code === "2") {
+      // Payment successful
+      // Update order status and payment info
+      await orderModel.findByIdAndUpdate(order_id, {
+        status: "Order Placed",
+        payment: true,
+        paymentId: payment_id,
+        paymentDetails: req.body,
+      });
+
+      // Clear cart after successful payment
+      await userModel.findByIdAndUpdate(order.userId, { cartData: {} });
+
+      // Send order confirmation email
+      if (order.address?.email) {
+        try {
+          await sendOrderConfirmationEmail({
+            to: order.address.email,
+            orderId: order._id,
+            items: order.items,
+            amount: order.amount,
+            address: order.address,
+            paymentMethod: order.paymentMethod,
+          });
+        } catch (emailErr) {
+          console.error(
+            "Failed to send order confirmation email:",
+            emailErr.message
+          );
+        }
+      }
+
+      return res.json({
+        success: true,
+        message: "Payment verified and order updated",
+      });
+    } else {
+      // Payment failed
+      await orderModel.findByIdAndUpdate(order_id, {
+        status: "Failed",
+        paymentId: payment_id,
+        paymentDetails: req.body,
+      });
+
+      return res.json({
+        success: false,
+        message: "Payment failed or canceled",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // Handle PayHere success return
 const payhereSuccess = async(req, res) => {

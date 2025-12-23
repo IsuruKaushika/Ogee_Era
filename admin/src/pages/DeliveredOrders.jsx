@@ -175,7 +175,7 @@ const DeliveredOrders = ({ token }) => {
                 className="p-2 font-semibold"
               >
                 <option value="Order Placed">Order Placed</option>
-                <option value="Print Label and Pack">Packing</option>
+                <option value="Packing">Packing</option>
                 <option value="Delivered">Delivered</option>
               </select>
               {/* Delete Button */}
