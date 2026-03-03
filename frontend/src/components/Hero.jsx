@@ -9,16 +9,27 @@ const Hero = () => {
 
   // Get bestseller images
   useEffect(() => {
-    if (products && products.length > 0) {
-      const bestProducts = products.filter((item) => item.bestseller);
-      const images = bestProducts.map(product => ({
-        src: Array.isArray(product.image) ? product.image[0] : product.image,
-        name: product.name,
-        id: product._id
-      }));
-      setBestSellerImages(images);
-      setIsLoading(false);
-    }
+    if (!products?.length) return;
+    
+    const bestProducts = products.filter(item => item.bestseller);
+    const images = bestProducts.map((product, index) => {
+      const src = Array.isArray(product.image) ? product.image[0] : product.image;
+      
+      // Only preload next 2 images to avoid bandwidth competition
+      if (index < 2) {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = src;
+        if (index === 0) link.setAttribute('fetchpriority', 'high');
+        document.head.appendChild(link);
+      }
+
+      return { src, name: product.name, id: product._id };
+    });
+
+    setBestSellerImages(images);
+    setIsLoading(false);
   }, [products]);
 
   // Auto-rotate images every 4 seconds
@@ -50,17 +61,6 @@ const Hero = () => {
   const goToSlide = (index) => {
     setCurrentImageIndex(index);
   };
-
-  if (isLoading || bestSellerImages.length === 0) {
-    return (
-      <div className='flex flex-col sm:flex-row border border-gray-400 h-[500px] sm:h-[600px] lg:h-[700px]'>
-        <div className='w-full sm:w-1/2 order-1 sm:order-none bg-gray-200 animate-pulse'></div>
-        <div className='w-full sm:w-1/2 flex items-center justify-center py-10 sm:py-0'>
-          <div className='text-[#414141]'>Loading...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className='flex flex-col sm:flex-row border border-gray-400 overflow-hidden min-h-[500px] sm:min-h-[600px] lg:min-h-[700px]'>
