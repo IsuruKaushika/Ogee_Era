@@ -77,6 +77,8 @@ const Hero = () => {
                 }`}
                 src={imageData.src} 
                 alt={imageData.name}
+                loading='eager'
+                fetchpriority='high'
               />
             ))}
             

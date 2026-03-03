@@ -38,11 +38,23 @@ const ProductItem = ({id, image, name, price, stockStatus, discount}) => {
     return (
       <Link className="text-gray-700 cursor-pointer" to={`/product/${id}`}>
         <div className="overflow-hidden relative">
-          <img
-            className="hover:scale-110 transition ease-in-out"
-            src={image[0]}
-            alt=" "
-          />
+          <picture>
+            <source
+              srcSet={`${image[0].replace('/upload/', '/upload/f_auto,q_auto,fl_lossy/')}`}
+              type="image/avif"
+            />
+            <source
+              srcSet={`${image[0].replace('/upload/', '/upload/f_auto,q_auto/')}`}
+              type="image/webp"
+            />
+            <img
+              className="hover:scale-110 transition ease-in-out"
+              src={image[0]}
+              alt="Product Image"
+              loading="eager"
+              fetchpriority="high"
+            />
+          </picture>
           {/* Discount Badge */}
           {discount > 0 && (
             <div className="absolute top-0 right-0 m-2 font-inter">

@@ -14,7 +14,7 @@ const SpecialOffers = () => {
     }, [products])
 
 
-  return (
+  return latestProducts.length > 0 ? (
     <div className="my-10">
       <div className="text-center py-8 text-3xl">
         <Title text1={"SPECIAL"} text2={"OFFERS"} />
@@ -37,7 +37,7 @@ const SpecialOffers = () => {
         ))}
       </div>
     </div>
-  );
+  ) : null;
 }
 
 export default SpecialOffers
