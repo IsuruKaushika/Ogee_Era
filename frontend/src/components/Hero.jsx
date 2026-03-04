@@ -67,6 +67,9 @@ const Hero = () => {
         {/*Hero Right Side - Rotating Bestseller Images*/}
         <div className='w-full sm:w-1/2 order-1 sm:order-none relative overflow-hidden group'>
           <div className='relative h-[500px] sm:h-[600px] lg:h-[700px]'>
+            {isLoading && (
+              <div className='absolute inset-0 flex items-center justify-center bg-gray-200 animate-ping z-50'/>
+            )}
             {bestSellerImages.map((imageData, index) => (
               <img 
                 key={imageData.id}
