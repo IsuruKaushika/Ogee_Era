@@ -7,8 +7,9 @@ import { GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState("Login");
-  const { token, setToken, navigate, backendUrl, getUserCart } =
+  const { token, setToken, navigate, backendUrl, mergeGuestCartIntoUser } =
     useContext(ShopContext);
+  const toastOptions = { position: "top-center", autoClose: 2000 };
 
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +19,7 @@ const Login = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       if (!credentialResponse?.credential) {
-        toast.error("Google sign-in failed");
+        toast.error("Google sign-in failed", toastOptions);
         return;
       }
 
@@ -29,19 +30,25 @@ const Login = () => {
       if (response.data.success) {
         setToken(response.data.token);
         localStorage.setItem("token", response.data.token);
-        toast.success("Logged in with Google successfully!");
-        getUserCart(response.data.token);
+        toast.success("Logged in with Google successfully!", toastOptions);
+        mergeGuestCartIntoUser(response.data.token);
       } else {
-        toast.error(response.data.message || "Google authentication failed");
+        toast.error(
+          response.data.message || "Google authentication failed",
+          toastOptions,
+        );
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message || "Google authentication failed");
+      toast.error(
+        error.message || "Google authentication failed",
+        toastOptions,
+      );
     }
   };
 
   const handleGoogleError = () => {
-    toast.error("Google sign-in was cancelled or failed");
+    toast.error("Google sign-in was cancelled or failed", toastOptions);
   };
 
   const onSubmitHandler = async (event) => {
@@ -56,9 +63,10 @@ const Login = () => {
         if (response.data.success) {
           setToken(response.data.token);
           localStorage.setItem("token", response.data.token);
-          toast.success("Registered successfully!");
+          toast.success("Registered successfully!", toastOptions);
+          mergeGuestCartIntoUser(response.data.token);
         } else {
-          toast.error(response.data.message);
+          toast.error(response.data.message, toastOptions);
         }
       } else if (currentState === "Login") {
         const response = await axios.post(backendUrl + "/api/user/login", {
@@ -68,10 +76,10 @@ const Login = () => {
         if (response.data.success) {
           setToken(response.data.token);
           localStorage.setItem("token", response.data.token);
-          toast.success("Logged in successfully!");
-          getUserCart(response.data.token);
+          toast.success("Logged in successfully!", toastOptions);
+          mergeGuestCartIntoUser(response.data.token);
         } else {
-          toast.error(response.data.message);
+          toast.error(response.data.message, toastOptions);
         }
       } else if (currentState === "Forgot Password") {
         // Reset password directly
@@ -83,16 +91,19 @@ const Login = () => {
           },
         );
         if (response.data.success) {
-          toast.success("Password reset successfully!");
+          toast.success("Password reset successfully!", toastOptions);
           setCurrentState("Login");
           setNewPassword("");
         } else {
-          toast.error(response.data.message || "Failed to reset password");
+          toast.error(
+            response.data.message || "Failed to reset password",
+            toastOptions,
+          );
         }
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message || "An error occurred");
+      toast.error(error.message || "An error occurred", toastOptions);
     }
   };
 
