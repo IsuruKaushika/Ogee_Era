@@ -1,10 +1,11 @@
-import React, { useState, useContext } from 'react'
-import { Link, NavLink } from 'react-router-dom'
-import { assets } from '../assets/assets'
-import { ShopContext } from '../context/ShopContext'
+import React, { useState, useContext } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { assets } from "../assets/assets";
+import { ShopContext } from "../context/ShopContext";
+import { googleLogout } from "@react-oauth/google";
 
 const Navbar = () => {
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(false);
 
   const {
     setShowSearch,
@@ -12,15 +13,16 @@ const Navbar = () => {
     navigate,
     token,
     setToken,
-    setCartItems
-  } = useContext(ShopContext)
+    setCartItems,
+  } = useContext(ShopContext);
 
   const logout = () => {
-    navigate('/login')
-    localStorage.removeItem('token')
-    setToken('')
-    setCartItems({})
-  }
+    navigate("/login");
+    googleLogout();
+    localStorage.removeItem("token");
+    setToken("");
+    setCartItems({});
+  };
 
   return (
     <div className="fixed top-0 left-0 right-0 flex items-center font-medium z-50 border-b border-gray-200 bg-white px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] h-24 ">
@@ -172,6 +174,6 @@ const Navbar = () => {
       </div>
     </div>
   );
-}
+};
 
-export default Navbar
+export default Navbar;

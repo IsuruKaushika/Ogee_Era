@@ -1,11 +1,12 @@
-import React from 'react'
-import { useState, useContext, useEffect } from 'react'
-import { ShopContext } from '../context/ShopContext'
-import { toast } from 'react-toastify'
-import axios from 'axios'
+import React from "react";
+import { useState, useContext, useEffect } from "react";
+import { ShopContext } from "../context/ShopContext";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
-  const [currentState, setCurrentState] = useState('Login')
+  const [currentState, setCurrentState] = useState("Login");
   const { token, setToken, navigate, backendUrl, getUserCart } =
     useContext(ShopContext);
 
@@ -13,6 +14,35 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      if (!credentialResponse?.credential) {
+        toast.error("Google sign-in failed");
+        return;
+      }
+
+      const response = await axios.post(backendUrl + "/api/user/google", {
+        idToken: credentialResponse.credential,
+      });
+
+      if (response.data.success) {
+        setToken(response.data.token);
+        localStorage.setItem("token", response.data.token);
+        toast.success("Logged in with Google successfully!");
+        getUserCart(response.data.token);
+      } else {
+        toast.error(response.data.message || "Google authentication failed");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || "Google authentication failed");
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error("Google sign-in was cancelled or failed");
+  };
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
@@ -50,7 +80,7 @@ const Login = () => {
           {
             email,
             newPassword,
-          }
+          },
         );
         if (response.data.success) {
           toast.success("Password reset successfully!");
@@ -68,19 +98,22 @@ const Login = () => {
 
   useEffect(() => {
     if (token) {
-      navigate('/')
+      navigate("/");
     }
-  }, [token, navigate])
+  }, [token, navigate]);
 
   return (
-    <form onSubmit={onSubmitHandler} className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 text-gray-800">
+    <form
+      onSubmit={onSubmitHandler}
+      className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 text-gray-800"
+    >
       <div className="inline-flex items-center gap-2 mb-2 mt-10">
         <p className="prata-regular text-3xl">{currentState}</p>
         <hr className="border-none h-[1.5px] w-8 bg-gray-800" />
       </div>
-      
+
       {/* Conditional rendering based on the current state */}
-      {currentState === 'Sign Up' && (
+      {currentState === "Sign Up" && (
         <input
           onChange={(e) => setName(e.target.value)}
           value={name}
@@ -90,7 +123,7 @@ const Login = () => {
           required
         />
       )}
-      
+
       <input
         onChange={(e) => setEmail(e.target.value)}
         value={email}
@@ -99,8 +132,8 @@ const Login = () => {
         placeholder="Email"
         required
       />
-      
-      {currentState === 'Login' && (
+
+      {currentState === "Login" && (
         <input
           onChange={(e) => setPassword(e.target.value)}
           value={password}
@@ -110,8 +143,8 @@ const Login = () => {
           required
         />
       )}
-      
-      {currentState === 'Sign Up' && (
+
+      {currentState === "Sign Up" && (
         <input
           onChange={(e) => setPassword(e.target.value)}
           value={password}
@@ -121,9 +154,9 @@ const Login = () => {
           required
         />
       )}
-      
+
       {/* New Password input for reset */}
-      {currentState === 'Forgot Password' && (
+      {currentState === "Forgot Password" && (
         <input
           onChange={(e) => setNewPassword(e.target.value)}
           value={newPassword}
@@ -133,50 +166,60 @@ const Login = () => {
           required
         />
       )}
-      
+
       <div className="w-full flex justify-between text-sm mt-[-8px]">
-        {currentState !== 'Forgot Password' ? (
-          <p 
-            className="cursor-pointer" 
-            onClick={() => setCurrentState('Forgot Password')}
+        {currentState !== "Forgot Password" ? (
+          <p
+            className="cursor-pointer"
+            onClick={() => setCurrentState("Forgot Password")}
           >
             Forgot Your Password?
           </p>
         ) : (
-          <p 
-            className="cursor-pointer" 
-            onClick={() => setCurrentState('Login')}
+          <p
+            className="cursor-pointer"
+            onClick={() => setCurrentState("Login")}
           >
             Back to Login
           </p>
         )}
-        
-        {currentState === 'Login' ? (
-          <p 
-            onClick={() => setCurrentState('Sign Up')} 
+
+        {currentState === "Login" ? (
+          <p
+            onClick={() => setCurrentState("Sign Up")}
             className="cursor-pointer"
           >
             Create Account
           </p>
-        ) : currentState === 'Sign Up' ? (
-          <p 
-            onClick={() => setCurrentState('Login')} 
+        ) : currentState === "Sign Up" ? (
+          <p
+            onClick={() => setCurrentState("Login")}
             className="cursor-pointer"
           >
             Login Here
           </p>
         ) : null}
       </div>
-      
-      <button className="bg-black text-white font-light px-8 py-2 mt-4">
-        {currentState === 'Login' 
-          ? 'Sign In' 
-          : currentState === 'Sign Up' 
-            ? 'Sign Up' 
-            : 'Reset Password'}
-      </button>
-    </form>
-  )
-}
 
-export default Login
+      <button className="bg-black text-white font-light px-8 py-2 mt-4">
+        {currentState === "Login"
+          ? "Sign In"
+          : currentState === "Sign Up"
+            ? "Sign Up"
+            : "Reset Password"}
+      </button>
+
+      {(currentState === "Login" || currentState === "Sign Up") && (
+        <div className="w-full flex flex-col items-center gap-3 mt-2">
+          <p className="text-xs text-gray-500">or continue with</p>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+          />
+        </div>
+      )}
+    </form>
+  );
+};
+
+export default Login;

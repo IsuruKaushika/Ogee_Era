@@ -1,7 +1,6 @@
 import React from 'react'
 import {Routes,Route} from 'react-router-dom'
 import Navbar from './components/Navbar'
-import Snowfall from "./components/Snowfall";
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
 import Contact from "./pages/Contact";
@@ -27,7 +26,6 @@ import Policy from "./pages/Policy";
 const App = () => {
   return (
     <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] max-w-[1920px] mx-auto ">
-      <Snowfall />
       <ToastContainer />
       <ScrollToTop />
       <Navbar />

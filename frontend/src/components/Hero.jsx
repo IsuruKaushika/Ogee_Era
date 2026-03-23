@@ -63,12 +63,12 @@ const Hero = () => {
   };
 
   return (
-    <div className='flex flex-col sm:flex-row border border-gray-400 overflow-hidden min-h-[500px] sm:min-h-[600px] lg:min-h-[700px]'>
+    <div className='flex flex-col sm:flex-row border border-gray-400 overflow-hidden min-h-[500px] md:min-h-[500px] lg:h-[calc(100vh-96px)]'>
         {/*Hero Right Side - Rotating Bestseller Images*/}
         <div className='w-full sm:w-1/2 order-1 sm:order-none relative overflow-hidden group'>
-          <div className='relative h-[500px] sm:h-[600px] lg:h-[700px]'>
+          <div className='relative h-[500px] sm:h-[600px] lg:h-full'>
             {isLoading && (
-              <div className='absolute inset-0 flex items-center justify-center bg-gray-200 animate-ping z-50'/>
+              <div className='absolute inset-0 flex items-center justify-center bg-gray-200 animate-pulse z-50'/>
             )}
             {bestSellerImages.map((imageData, index) => (
               <img 
