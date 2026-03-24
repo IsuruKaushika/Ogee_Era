@@ -1,54 +1,55 @@
-import React, { useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { useContext } from 'react';
-import { ShopContext } from '../context/ShopContext'
-import { useEffect } from 'react'
-import ProductItem from '../components/ProductItem'
-import { assets } from '../assets/assets'
-import { useNavigate } from 'react-router-dom'
-import RelatedProducts from '../components/RelatedProducts'
-
+import React, { useState } from "react";
+import { useParams } from "react-router-dom";
+import { useContext } from "react";
+import { ShopContext } from "../context/ShopContext";
+import { useEffect } from "react";
+import ProductItem from "../components/ProductItem";
+import { assets } from "../assets/assets";
+import { useNavigate } from "react-router-dom";
+import RelatedProducts from "../components/RelatedProducts";
+import { FiHeart } from "react-icons/fi";
 
 const Product = () => {
-  const {productId} = useParams();
-  const {products, currency, addToCart} = useContext(ShopContext);
-  const [productData, setProductData] = useState(false)
-  const [image, setImage] = useState('')
-  const [size, setSize] = useState('')
-  const [sizeError, setSizeError] = useState(false)
-  const [showSizeChart, setShowSizeChart] = useState(false)
+  const { productId } = useParams();
+  const { products, currency, addToCart, isInWishlist, toggleWishlist } =
+    useContext(ShopContext);
+  const [productData, setProductData] = useState(false);
+  const [image, setImage] = useState("");
+  const [size, setSize] = useState("");
+  const [sizeError, setSizeError] = useState(false);
+  const [showSizeChart, setShowSizeChart] = useState(false);
 
-  const fetchProductData = async() => {
+  const fetchProductData = async () => {
     products.map((item) => {
-      if(item._id === productId){
-        setProductData(item)
-        setImage(item.image[0])
+      if (item._id === productId) {
+        setProductData(item);
+        setImage(item.image[0]);
         // Reset size error when changing products
-        setSizeError(false)
+        setSizeError(false);
         // If no sizes available, set a default size
         if (!item.sizes || item.sizes.length === 0) {
-          setSize('default')
+          setSize("default");
         } else {
-          setSize('') // Reset size selection for products with size options
+          setSize(""); // Reset size selection for products with size options
         }
         return null;
       }
-    })
-  }
+    });
+  };
 
   useEffect(() => {
     fetchProductData();
-  }, [productId, products])
+  }, [productId, products]);
 
   // Function to render stock status with appropriate styling
   const renderStockStatus = () => {
     if (!productData.stockStatus) return null;
-    
+
     const statusColor = {
-      'In Stock': 'text-gray-600',
-      'Out of Stock': 'text-gray-600',
-      'Limited Stock': 'text-orange-500'
-    }
+      "In Stock": "text-gray-600",
+      "Out of Stock": "text-gray-600",
+      "Limited Stock": "text-orange-500",
+    };
 
     return (
       <div className="mt-3">
@@ -56,24 +57,25 @@ const Product = () => {
           {productData.stockStatus}
         </span>
       </div>
-    )
-  }
+    );
+  };
 
   // Function to handle adding to cart
   const handleAddToCart = () => {
     // For products with sizes, require size selection
     if (productData.sizes && productData.sizes.length > 0 && !size) {
-      setSizeError(true)
-      return
+      setSizeError(true);
+      return;
     }
-    
+
     // Clear any previous error
-    setSizeError(false)
-    
+    setSizeError(false);
+
     // Add to cart with either selected size or default value
-    const sizeToUse = (productData.sizes && productData.sizes.length > 0) ? size : 'default'
-    addToCart(productData._id, sizeToUse)
-  }
+    const sizeToUse =
+      productData.sizes && productData.sizes.length > 0 ? size : "default";
+    addToCart(productData._id, sizeToUse);
+  };
 
   return productData ? (
     <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
@@ -190,6 +192,18 @@ const Product = () => {
               : "ADD TO CART"}
           </button>
 
+          <button
+            onClick={() => toggleWishlist(productData._id)}
+            className="ml-3 border border-gray-300 px-4 py-3 text-sm mt-6 inline-flex items-center gap-2"
+          >
+            {isInWishlist(productData._id) ? (
+              <FiHeart className="text-red-500" />
+            ) : (
+              <FiHeart className="text-gray-700" />
+            )}
+            {isInWishlist(productData._id) ? "WISHLISTED" : "ADD TO WISHLIST"}
+          </button>
+
           <hr className="mt-8 sm:w-4/5" />
           <div className="text-sm text-gray-500 mt-5 flex flex-col gap-1">
             <p>100% Original Product.</p>
@@ -230,6 +244,6 @@ const Product = () => {
   ) : (
     <div className="opacity-0"></div>
   );
-}
+};
 
-export default Product
+export default Product;

@@ -68,7 +68,7 @@ const Customers = ({ token }) => {
                   <td className="px-4 py-3">{user.name || "-"}</td>
                   <td className="px-4 py-3">{user.email || "-"}</td>
                   <td className="px-4 py-3 capitalize">
-                    {user.authProvider || "local"}
+                    {user.authProvider || "Email"}
                   </td>
                 </tr>
               ))}

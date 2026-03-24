@@ -3,6 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
 import { googleLogout } from "@react-oauth/google";
+import { FiHeart } from "react-icons/fi";
 
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
@@ -10,10 +11,12 @@ const Navbar = () => {
   const {
     setShowSearch,
     getCartCount,
+    getWishlistCount,
     navigate,
     token,
     setToken,
     setCartItems,
+    setWishlistItems,
   } = useContext(ShopContext);
 
   const logout = () => {
@@ -22,6 +25,7 @@ const Navbar = () => {
     localStorage.removeItem("token");
     setToken("");
     setCartItems({});
+    setWishlistItems({});
   };
 
   return (
@@ -76,7 +80,10 @@ const Navbar = () => {
                   <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-500 rounded shadow-md">
                     <p
                       className="cursor-pointer hover:text-black"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate("/account");
+                      }}
                     >
                       My Profile
                     </p>
@@ -109,6 +116,13 @@ const Navbar = () => {
                 {getCartCount()}
               </p>
             </Link>
+
+            <Link to="/wishlist" className="relative">
+              <FiHeart className="w-5 h-5" />
+              <p className="absolute right-[-6px] bottom-[-6px] w-4 text-center leading-4 bg-black text-white aspect-square rounded-full text-[8px]">
+                {getWishlistCount()}
+              </p>
+            </Link>
           </div>
         </div>
 
@@ -134,16 +148,16 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-5">
-            <img
-              onClick={() => (token ? navigate("/orders") : navigate("/login"))}
-              className="w-5 cursor-pointer"
-              src={assets.profile_icon}
-              alt="Profile"
-            />
             <Link to="/cart" className="relative">
               <img src={assets.cart_icon} className="w-5 min-w-5" alt="Cart" />
               <p className="absolute right-[-5px] bottom-[-5px] w-4 text-center leading-4 bg-black text-white aspect-square rounded-full text-[8px]">
                 {getCartCount()}
+              </p>
+            </Link>
+            <Link to="/wishlist" className="relative">
+              <FiHeart className="w-5 h-5" />
+              <p className="absolute right-[-6px] bottom-[-6px] w-4 text-center leading-4 bg-black text-white aspect-square rounded-full text-[8px]">
+                {getWishlistCount()}
               </p>
             </Link>
           </div>
@@ -158,7 +172,7 @@ const Navbar = () => {
           <div className="flex flex-col text-gray-600 bg-white">
             <div
               onClick={() => setVisible(false)}
-              className="flex items-center gap-4 p-3 cursor-pointer"
+              className="flex items-center gap-4 py-3 cursor-pointer"
             >
               <img
                 className="h-4 rotate-180"
@@ -195,6 +209,22 @@ const Navbar = () => {
             >
               CONTACT
             </NavLink>
+            <NavLink
+              onClick={() => setVisible(false)}
+              className="py-2 pl-6 border"
+              to="/wishlist"
+            >
+              WISHLIST
+            </NavLink>
+            {token && (
+              <NavLink
+                onClick={() => setVisible(false)}
+                className="py-2 pl-6 border"
+                to="/account"
+              >
+                ACCOUNT
+              </NavLink>
+            )}
             <p
               onClick={() => {
                 setVisible(false);

@@ -80,7 +80,7 @@ const googleAuthUser = async (req, res) => {
         authProvider: "google",
       });
     } else if (!user.authProvider) {
-      user.authProvider = "local";
+      user.authProvider = "Email";
       await user.save();
     }
 
@@ -220,6 +220,150 @@ const listUsers = async (req, res) => {
   }
 };
 
+// Get user wishlist
+const getWishlist = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const user = await userModel.findById(userId);
+
+    return res.json({ success: true, wishlistData: user?.wishlistData || {} });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+// Add item to wishlist
+const addToWishlist = async (req, res) => {
+  try {
+    const { userId, itemId } = req.body;
+    if (!itemId) {
+      return res.json({ success: false, message: "Product id is required" });
+    }
+
+    const user = await userModel.findById(userId);
+    const wishlistData = user?.wishlistData || {};
+    wishlistData[itemId] = true;
+
+    await userModel.findByIdAndUpdate(userId, { wishlistData });
+    return res.json({ success: true, wishlistData });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+// Remove item from wishlist
+const removeFromWishlist = async (req, res) => {
+  try {
+    const { userId, itemId } = req.body;
+    if (!itemId) {
+      return res.json({ success: false, message: "Product id is required" });
+    }
+
+    const user = await userModel.findById(userId);
+    const wishlistData = user?.wishlistData || {};
+    delete wishlistData[itemId];
+
+    await userModel.findByIdAndUpdate(userId, { wishlistData });
+    return res.json({ success: true, wishlistData });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+// Merge guest wishlist into user wishlist
+const mergeWishlist = async (req, res) => {
+  try {
+    const { userId, guestWishlist } = req.body;
+    const user = await userModel.findById(userId);
+    const wishlistData = user?.wishlistData || {};
+
+    if (guestWishlist && typeof guestWishlist === "object") {
+      for (const itemId in guestWishlist) {
+        if (guestWishlist[itemId]) {
+          wishlistData[itemId] = true;
+        }
+      }
+    }
+
+    await userModel.findByIdAndUpdate(userId, { wishlistData });
+    return res.json({ success: true, wishlistData });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+// Get logged-in user profile
+const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const user = await userModel.findById(userId, {
+      name: 1,
+      email: 1,
+      authProvider: 1,
+      createdAt: 1,
+      wishlistData: 1,
+      cartData: 1,
+    });
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    return res.json({ success: true, user });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+// Update logged-in user profile (currently name only)
+const updateUserProfile = async (req, res) => {
+  try {
+    const { userId, name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.json({ success: false, message: "Name is required" });
+    }
+
+    const trimmedName = name.trim();
+    if (trimmedName.length < 2) {
+      return res.json({
+        success: false,
+        message: "Name must be at least 2 characters",
+      });
+    }
+
+    const user = await userModel.findByIdAndUpdate(
+      userId,
+      { name: trimmedName },
+      {
+        new: true,
+        projection: {
+          name: 1,
+          email: 1,
+          authProvider: 1,
+          createdAt: 1,
+          wishlistData: 1,
+          cartData: 1,
+        },
+      },
+    );
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    return res.json({ success: true, user, message: "Profile updated" });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   loginUser,
   registerUser,
@@ -227,4 +371,10 @@ export {
   resetPassword,
   googleAuthUser,
   listUsers,
+  getWishlist,
+  addToWishlist,
+  removeFromWishlist,
+  mergeWishlist,
+  getUserProfile,
+  updateUserProfile,
 };

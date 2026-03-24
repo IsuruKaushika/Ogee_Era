@@ -1,6 +1,6 @@
-import React from 'react'
-import {Routes,Route} from 'react-router-dom'
-import Navbar from './components/Navbar'
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
 import Contact from "./pages/Contact";
@@ -19,6 +19,8 @@ import Terms from "./pages/Terms";
 import privacy from "./pages/Policy";
 import Returns from "./pages/Returns";
 import ScrollToTop from "./components/ScrollToTop";
+import Wishlist from "./pages/Wishlist";
+import Account from "./pages/Account";
 import { ToastContainer, toast } from "react-toastify"; //used for notifications
 import "react-toastify/dist/ReactToastify.css";
 import Policy from "./pages/Policy";
@@ -40,6 +42,8 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/place-order" element={<PlaceOrder />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/account" element={<Account />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-failed" element={<PaymentFailed />} />
@@ -55,4 +59,4 @@ const App = () => {
   );
 };
 
-export default App
+export default App;

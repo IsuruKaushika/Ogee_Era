@@ -8,12 +8,14 @@ import axios from "axios";
 export const ShopContext = createContext();
 const ShopContextProvider = (props) => {
   const GUEST_CART_KEY = "guestCart";
+  const GUEST_WISHLIST_KEY = "guestWishlist";
   const currency = "Rs.";
   const delivery_fee = 400;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [cartItems, setCartItems] = useState({});
+  const [wishlistItems, setWishlistItems] = useState({});
   const [products, setProducts] = useState([]);
   const [token, setToken] = useState("");
   const navigate = useNavigate();
@@ -77,6 +79,10 @@ const ShopContextProvider = (props) => {
     }
     return totalCount;
   };
+
+  const getWishlistCount = () => Object.keys(wishlistItems || {}).length;
+
+  const isInWishlist = (itemId) => Boolean(wishlistItems?.[itemId]);
 
   const getCartDiscount = () => {
     let totalDiscount = 0;
@@ -164,6 +170,115 @@ const ShopContextProvider = (props) => {
     }
   };
 
+  const getUserWishlist = async (token) => {
+    try {
+      const response = await axios.post(
+        backendUrl + "/api/user/wishlist/get",
+        {},
+        { headers: { token } },
+      );
+
+      if (response.data.success) {
+        setWishlistItems(response.data.wishlistData || {});
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
+    }
+  };
+
+  const addToWishlist = async (itemId) => {
+    if (!token) {
+      setWishlistItems((prev) => ({ ...prev, [itemId]: true }));
+      toast.success("Added to wishlist", {
+        position: "top-center",
+        autoClose: 1600,
+      });
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        backendUrl + "/api/user/wishlist/add",
+        { itemId },
+        { headers: { token } },
+      );
+
+      if (response.data.success) {
+        setWishlistItems(response.data.wishlistData || {});
+      } else {
+        toast.error(response.data.message || "Failed to add wishlist item");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
+    }
+  };
+
+  const removeFromWishlist = async (itemId) => {
+    if (!token) {
+      setWishlistItems((prev) => {
+        const updated = { ...(prev || {}) };
+        delete updated[itemId];
+        return updated;
+      });
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        backendUrl + "/api/user/wishlist/remove",
+        { itemId },
+        { headers: { token } },
+      );
+
+      if (response.data.success) {
+        setWishlistItems(response.data.wishlistData || {});
+      } else {
+        toast.error(response.data.message || "Failed to remove wishlist item");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
+    }
+  };
+
+  const toggleWishlist = async (itemId) => {
+    if (isInWishlist(itemId)) {
+      await removeFromWishlist(itemId);
+    } else {
+      await addToWishlist(itemId);
+    }
+  };
+
+  const mergeGuestWishlistIntoUser = async (token) => {
+    try {
+      const hasGuestItems = Object.keys(wishlistItems || {}).length > 0;
+
+      if (!hasGuestItems) {
+        await getUserWishlist(token);
+        localStorage.removeItem(GUEST_WISHLIST_KEY);
+        return;
+      }
+
+      const response = await axios.post(
+        backendUrl + "/api/user/wishlist/merge",
+        { guestWishlist: wishlistItems },
+        { headers: { token } },
+      );
+
+      if (response.data.success) {
+        setWishlistItems(response.data.wishlistData || {});
+        localStorage.removeItem(GUEST_WISHLIST_KEY);
+      } else {
+        await getUserWishlist(token);
+      }
+    } catch (error) {
+      console.log(error);
+      await getUserWishlist(token);
+    }
+  };
+
   const mergeGuestCartIntoUser = async (token) => {
     try {
       const hasGuestItems = Object.keys(cartItems || {}).length > 0;
@@ -201,20 +316,34 @@ const ShopContextProvider = (props) => {
     if (storedToken) {
       setToken(storedToken);
       getUserCart(storedToken);
+      getUserWishlist(storedToken);
       return;
     }
 
     const guestCartFromStorage = localStorage.getItem(GUEST_CART_KEY);
-    if (!guestCartFromStorage) return;
-
-    try {
-      const parsedGuestCart = JSON.parse(guestCartFromStorage);
-      if (parsedGuestCart && typeof parsedGuestCart === "object") {
-        setCartItems(parsedGuestCart);
+    if (guestCartFromStorage) {
+      try {
+        const parsedGuestCart = JSON.parse(guestCartFromStorage);
+        if (parsedGuestCart && typeof parsedGuestCart === "object") {
+          setCartItems(parsedGuestCart);
+        }
+      } catch (error) {
+        console.log(error);
+        localStorage.removeItem(GUEST_CART_KEY);
       }
-    } catch (error) {
-      console.log(error);
-      localStorage.removeItem(GUEST_CART_KEY);
+    }
+
+    const guestWishlistFromStorage = localStorage.getItem(GUEST_WISHLIST_KEY);
+    if (guestWishlistFromStorage) {
+      try {
+        const parsedGuestWishlist = JSON.parse(guestWishlistFromStorage);
+        if (parsedGuestWishlist && typeof parsedGuestWishlist === "object") {
+          setWishlistItems(parsedGuestWishlist);
+        }
+      } catch (error) {
+        console.log(error);
+        localStorage.removeItem(GUEST_WISHLIST_KEY);
+      }
     }
   }, []);
 
@@ -226,6 +355,18 @@ const ShopContextProvider = (props) => {
 
     localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cartItems || {}));
   }, [cartItems, token]);
+
+  useEffect(() => {
+    if (token) {
+      localStorage.removeItem(GUEST_WISHLIST_KEY);
+      return;
+    }
+
+    localStorage.setItem(
+      GUEST_WISHLIST_KEY,
+      JSON.stringify(wishlistItems || {}),
+    );
+  }, [wishlistItems, token]);
 
   const value = {
     products,
@@ -239,15 +380,24 @@ const ShopContextProvider = (props) => {
     setCartItems,
     addToCart,
     getCartCount,
+    getWishlistCount,
+    isInWishlist,
     getCartDiscount,
     getUserCart,
+    getUserWishlist,
     mergeGuestCartIntoUser,
+    mergeGuestWishlistIntoUser,
+    addToWishlist,
+    removeFromWishlist,
+    toggleWishlist,
     updateQuantity,
     getCartAmount,
     navigate,
     backendUrl,
     setToken,
+    setWishlistItems,
     token,
+    wishlistItems,
   };
 
   return (

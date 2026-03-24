@@ -7,8 +7,14 @@ import { GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState("Login");
-  const { token, setToken, navigate, backendUrl, mergeGuestCartIntoUser } =
-    useContext(ShopContext);
+  const {
+    token,
+    setToken,
+    navigate,
+    backendUrl,
+    mergeGuestCartIntoUser,
+    mergeGuestWishlistIntoUser,
+  } = useContext(ShopContext);
   const toastOptions = { position: "top-center", autoClose: 2000 };
 
   const [name, setName] = useState("");
@@ -32,6 +38,7 @@ const Login = () => {
         localStorage.setItem("token", response.data.token);
         toast.success("Logged in with Google successfully!", toastOptions);
         mergeGuestCartIntoUser(response.data.token);
+        mergeGuestWishlistIntoUser(response.data.token);
       } else {
         toast.error(
           response.data.message || "Google authentication failed",
@@ -65,6 +72,7 @@ const Login = () => {
           localStorage.setItem("token", response.data.token);
           toast.success("Registered successfully!", toastOptions);
           mergeGuestCartIntoUser(response.data.token);
+          mergeGuestWishlistIntoUser(response.data.token);
         } else {
           toast.error(response.data.message, toastOptions);
         }
@@ -78,6 +86,7 @@ const Login = () => {
           localStorage.setItem("token", response.data.token);
           toast.success("Logged in successfully!", toastOptions);
           mergeGuestCartIntoUser(response.data.token);
+          mergeGuestWishlistIntoUser(response.data.token);
         } else {
           toast.error(response.data.message, toastOptions);
         }
