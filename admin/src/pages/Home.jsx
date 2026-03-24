@@ -8,7 +8,6 @@ const statusColorMap = {
   Packing: "bg-amber-500",
   Delivered: "bg-emerald-500",
   Failed: "bg-red-500",
-  "Pending Payment": "bg-slate-500",
 };
 
 const stockColorMap = {
@@ -20,6 +19,165 @@ const stockColorMap = {
 const formatMonth = (date) =>
   date.toLocaleString("en-US", { month: "short", year: "2-digit" });
 
+const formatDayShort = (date) =>
+  date.toLocaleString("en-US", { weekday: "short" });
+
+const formatDateShort = (date) =>
+  date.toLocaleString("en-US", { month: "short", day: "numeric" });
+
+const formatAxisValue = (value) =>
+  new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: value >= 1000 ? 1 : 0,
+  }).format(value);
+
+const startOfDay = (value) => {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const salesRangeOptions = [
+  { key: "week", label: "Week" },
+  { key: "month", label: "Last Month" },
+  { key: "threeMonths", label: "3 Months" },
+  { key: "all", label: "All Time" },
+];
+
+const buildSalesPoints = (orders, range) => {
+  const now = new Date();
+
+  if (range === "week") {
+    const points = [];
+    for (let i = 6; i >= 0; i--) {
+      const day = startOfDay(now);
+      day.setDate(day.getDate() - i);
+      points.push({
+        key: day.toISOString(),
+        label: formatDayShort(day),
+        total: 0,
+        start: day,
+        end: new Date(day.getTime() + 24 * 60 * 60 * 1000),
+      });
+    }
+
+    orders.forEach((order) => {
+      const orderDate = new Date(order.date);
+      const slot = points.find(
+        (point) => orderDate >= point.start && orderDate < point.end,
+      );
+      if (slot) slot.total += Number(order.amount || 0);
+    });
+
+    return {
+      title: "Sales Trend (Last 7 Days)",
+      points: points.map(({ key, label, total }) => ({ key, label, total })),
+    };
+  }
+
+  if (range === "month") {
+    const points = [];
+    for (let i = 4; i >= 0; i--) {
+      const end = startOfDay(now);
+      end.setDate(end.getDate() - i * 7);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 6);
+
+      points.push({
+        key: start.toISOString(),
+        label: `${formatDateShort(start)}-${formatDateShort(end)}`,
+        total: 0,
+        start,
+        end: new Date(end.getTime() + 24 * 60 * 60 * 1000),
+      });
+    }
+
+    orders.forEach((order) => {
+      const orderDate = new Date(order.date);
+      const slot = points.find(
+        (point) => orderDate >= point.start && orderDate < point.end,
+      );
+      if (slot) slot.total += Number(order.amount || 0);
+    });
+
+    return {
+      title: "Sales Trend (Last Month)",
+      points: points.map(({ key, label, total }) => ({ key, label, total })),
+    };
+  }
+
+  if (range === "threeMonths") {
+    const points = [];
+    for (let i = 2; i >= 0; i--) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      points.push({
+        key: monthDate.toISOString(),
+        label: formatMonth(monthDate),
+        total: 0,
+        month: monthDate.getMonth(),
+        year: monthDate.getFullYear(),
+      });
+    }
+
+    orders.forEach((order) => {
+      const orderDate = new Date(order.date);
+      const slot = points.find(
+        (point) =>
+          point.month === orderDate.getMonth() &&
+          point.year === orderDate.getFullYear(),
+      );
+      if (slot) slot.total += Number(order.amount || 0);
+    });
+
+    return {
+      title: "Sales Trend (Last 3 Months)",
+      points: points.map(({ key, label, total }) => ({ key, label, total })),
+    };
+  }
+
+  const monthMap = new Map();
+  orders
+    .slice()
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .forEach((order) => {
+      const orderDate = new Date(order.date);
+      const monthKey = `${orderDate.getFullYear()}-${orderDate.getMonth()}`;
+
+      if (!monthMap.has(monthKey)) {
+        const monthDate = new Date(
+          orderDate.getFullYear(),
+          orderDate.getMonth(),
+          1,
+        );
+        monthMap.set(monthKey, {
+          key: monthDate.toISOString(),
+          label: formatMonth(monthDate),
+          total: 0,
+        });
+      }
+
+      monthMap.get(monthKey).total += Number(order.amount || 0);
+    });
+
+  return {
+    title: "Sales Trend (All Time)",
+    points: Array.from(monthMap.values()),
+  };
+};
+
+const buildSmoothLinePath = (coords) => {
+  if (!coords.length) return "";
+  if (coords.length === 1) return `M ${coords[0].x} ${coords[0].y}`;
+
+  return coords.reduce((path, point, index, array) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+
+    const previous = array[index - 1];
+    const controlX = (previous.x + point.x) / 2;
+    return `${path} C ${controlX} ${previous.y}, ${controlX} ${point.y}, ${point.x} ${point.y}`;
+  }, "");
+};
+
 const StatCard = ({ title, value, note }) => (
   <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
     <p className="text-xs uppercase tracking-wide text-gray-500">{title}</p>
@@ -28,17 +186,29 @@ const StatCard = ({ title, value, note }) => (
   </div>
 );
 
-const SalesLineChart = ({ points }) => {
+const SalesLineChart = ({ title, points, range, onRangeChange }) => {
   if (!points || points.length === 0) {
     return (
       <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-sky-50/60 p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-gray-700">
-            Sales Trend (Last 6 Months)
-          </p>
-          <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-sky-700">
-            Revenue
-          </span>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-gray-700">{title}</p>
+          </div>
+          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Range
+            <select
+              value={range}
+              onChange={(event) => onRangeChange(event.target.value)}
+              className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold normal-case text-gray-700 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+              aria-label="Select sales chart range"
+            >
+              {salesRangeOptions.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         <p className="mt-4 text-sm text-gray-500">
           No sales data available yet.
@@ -49,45 +219,56 @@ const SalesLineChart = ({ points }) => {
 
   const width = 720;
   const height = 240;
-  const padding = 30;
+  const paddingTop = 24;
+  const paddingRight = 18;
+  const paddingBottom = 30;
+  const paddingLeft = 72;
   const maxValue = Math.max(...points.map((p) => p.total), 1);
-  const chartW = width - padding * 2;
-  const chartH = height - padding * 2;
+  const chartW = width - paddingLeft - paddingRight;
+  const chartH = height - paddingTop - paddingBottom;
+  const labelStep = points.length > 10 ? Math.ceil(points.length / 6) : 1;
 
   const coords = points.map((point, index) => {
-    const x = padding + (index * chartW) / Math.max(points.length - 1, 1);
-    const y = padding + chartH - (point.total / maxValue) * chartH;
+    const x =
+      paddingLeft + (index * chartW) / Math.max(points.length - 1, 1);
+    const y = paddingTop + chartH - (point.total / maxValue) * chartH;
     return { ...point, x, y };
   });
 
-  const polyline = coords.map((c) => `${c.x},${c.y}`).join(" ");
-  const linePath = coords.reduce(
-    (path, point, index) =>
-      index === 0
-        ? `M ${point.x} ${point.y}`
-        : `${path} L ${point.x} ${point.y}`,
-    "",
-  );
+  const linePath = buildSmoothLinePath(coords);
   const areaPath = linePath
-    ? `${linePath} L ${coords[coords.length - 1].x} ${height - padding} L ${coords[0].x} ${height - padding} Z`
+    ? `${linePath} L ${coords[coords.length - 1].x} ${height - paddingBottom} L ${coords[0].x} ${height - paddingBottom} Z`
     : "";
 
-  const yGuides = [0.25, 0.5, 0.75].map((ratio) => ({
-    y: padding + chartH * ratio,
-    value: Math.round(maxValue * (1 - ratio)),
+  const yGuides = [1, 0.75, 0.5, 0.25, 0].map((ratio) => ({
+    y: paddingTop + chartH * (1 - ratio),
+    value: Math.round(maxValue * ratio),
   }));
 
   return (
     <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-sky-50/60 p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-700">
-          Sales Trend (Last 6 Months)
-        </p>
-        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-sky-700">
-          Revenue
-        </span>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-gray-700">{title}</p>
+        </div>
+        <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Range
+          <select
+            value={range}
+            onChange={(event) => onRangeChange(event.target.value)}
+            className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold normal-case text-gray-700 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+            aria-label="Select sales chart range"
+          >
+            {salesRangeOptions.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="mt-3 w-full">
+      <div className="mt-3">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
         <defs>
           <linearGradient id="salesAreaGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.42" />
@@ -115,39 +296,45 @@ const SalesLineChart = ({ points }) => {
         {yGuides.map((guide) => (
           <g key={guide.y}>
             <line
-              x1={padding}
+              x1={paddingLeft}
               y1={guide.y}
-              x2={width - padding}
+              x2={width - paddingRight}
               y2={guide.y}
               stroke="#e2e8f0"
               strokeDasharray="5 7"
             />
-            <text x={4} y={guide.y + 4} fontSize="10" fill="#94a3b8">
-              {currency} {guide.value.toLocaleString()}
+            <text
+              x={paddingLeft - 10}
+              y={guide.y + 4}
+              textAnchor="end"
+              fontSize="10"
+              fill="#94a3b8"
+            >
+              {currency} {formatAxisValue(guide.value)}
             </text>
           </g>
         ))}
 
         <line
-          x1={padding}
-          y1={height - padding}
-          x2={width - padding}
-          y2={height - padding}
+          x1={paddingLeft}
+          y1={height - paddingBottom}
+          x2={width - paddingRight}
+          y2={height - paddingBottom}
           stroke="#cbd5e1"
         />
 
         {areaPath && <path d={areaPath} fill="url(#salesAreaGradient)" />}
-        <polyline
+        <path
+          d={linePath}
           fill="none"
           stroke="url(#salesLineGradient)"
           strokeWidth="3"
           strokeLinejoin="round"
           strokeLinecap="round"
-          points={polyline}
           filter="url(#salesLineGlow)"
         />
-        {coords.map((c) => (
-          <g key={c.label}>
+        {coords.map((c, index) => (
+          <g key={c.key || c.label}>
             <circle cx={c.x} cy={c.y} r="6" fill="#2563eb" opacity="0.16" />
             <circle
               cx={c.x}
@@ -157,18 +344,23 @@ const SalesLineChart = ({ points }) => {
               stroke="#2563eb"
               strokeWidth="2"
             />
-            <text
-              x={c.x}
-              y={height - 8}
-              textAnchor="middle"
-              fontSize="10"
-              fill="#64748b"
-            >
-              {c.label}
-            </text>
+            {(coords.length <= 10 ||
+              index % labelStep === 0 ||
+              index === coords.length - 1) && (
+              <text
+                x={c.x}
+                y={height - 8}
+                textAnchor="middle"
+                fontSize="10"
+                fill="#64748b"
+              >
+                {c.label}
+              </text>
+            )}
           </g>
         ))}
-      </svg>
+        </svg>
+      </div>
     </div>
   );
 };
@@ -183,42 +375,44 @@ const StockPieChart = ({ breakdown }) => {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <p className="text-sm font-semibold text-gray-700">Stock Distribution</p>
-      <div className="mt-4 flex items-center gap-5">
-        <svg width="160" height="160" viewBox="0 0 160 160">
-          <g transform="translate(80,80) rotate(-90)">
-            {entries.map(([key, value]) => {
-              const fraction = value / total;
-              const dash = fraction * circumference;
-              const offset = -cumulative * circumference;
-              cumulative += fraction;
+      <div className="mt-4 flex min-h-[180px] items-center justify-center">
+        <div className="flex flex-col items-center justify-center gap-5 sm:flex-row sm:items-center">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <g transform="translate(80,80) rotate(-90)">
+              {entries.map(([key, value]) => {
+                const fraction = value / total;
+                const dash = fraction * circumference;
+                const offset = -cumulative * circumference;
+                cumulative += fraction;
 
-              return (
-                <circle
-                  key={key}
-                  r={radius}
-                  cx="0"
-                  cy="0"
-                  fill="transparent"
-                  stroke={stockColorMap[key]}
-                  strokeWidth="20"
-                  strokeDasharray={`${dash} ${circumference - dash}`}
-                  strokeDashoffset={offset}
+                return (
+                  <circle
+                    key={key}
+                    r={radius}
+                    cx="0"
+                    cy="0"
+                    fill="transparent"
+                    stroke={stockColorMap[key]}
+                    strokeWidth="20"
+                    strokeDasharray={`${dash} ${circumference - dash}`}
+                    strokeDashoffset={offset}
+                  />
+                );
+              })}
+            </g>
+          </svg>
+          <div className="space-y-2 text-sm">
+            {entries.map(([key, value]) => (
+              <div key={key} className="flex items-center gap-2">
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{ backgroundColor: stockColorMap[key] }}
                 />
-              );
-            })}
-          </g>
-        </svg>
-        <div className="space-y-2 text-sm">
-          {entries.map(([key, value]) => (
-            <div key={key} className="flex items-center gap-2">
-              <span
-                className="h-3 w-3 rounded-full"
-                style={{ backgroundColor: stockColorMap[key] }}
-              />
-              <span className="text-gray-700">{key}</span>
-              <span className="font-semibold text-gray-900">{value}</span>
-            </div>
-          ))}
+                <span className="text-gray-700">{key}</span>
+                <span className="font-semibold text-gray-900">{value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -229,6 +423,7 @@ const Home = ({ token }) => {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [salesRange, setSalesRange] = useState("week");
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -340,30 +535,12 @@ const Home = ({ token }) => {
       )
       .slice(0, 6);
 
-    const statusSummary = orders.reduce((acc, order) => {
+    const statusSummary = orders
+      .filter((order) => order.status !== "Pending Payment")
+      .reduce((acc, order) => {
       acc[order.status] = (acc[order.status] || 0) + 1;
       return acc;
     }, {});
-
-    const monthData = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      monthData.push({
-        month: d.getMonth(),
-        year: d.getFullYear(),
-        label: formatMonth(d),
-        total: 0,
-      });
-    }
-
-    validOrders.forEach((order) => {
-      const d = new Date(order.date);
-      const slot = monthData.find(
-        (m) => m.month === d.getMonth() && m.year === d.getFullYear(),
-      );
-      if (slot) slot.total += Number(order.amount || 0);
-    });
 
     return {
       totalSales,
@@ -375,9 +552,9 @@ const Home = ({ token }) => {
       stockBreakdown,
       lowStockProducts,
       statusSummary,
-      monthData,
+      salesChart: buildSalesPoints(validOrders, salesRange),
     };
-  }, [orders, products]);
+  }, [orders, products, salesRange]);
 
   if (loading) {
     return <p className="text-gray-500">Loading dashboard...</p>;
@@ -414,10 +591,11 @@ const Home = ({ token }) => {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <SalesLineChart
-          points={analytics.monthData.map((m) => ({
-            label: m.label,
-            total: m.total,
-          }))}
+          title={analytics.salesChart.title}
+          subtitle={analytics.salesChart.subtitle}
+          points={analytics.salesChart.points}
+          range={salesRange}
+          onRangeChange={setSalesRange}
         />
         <StockPieChart breakdown={analytics.stockBreakdown} />
       </div>
