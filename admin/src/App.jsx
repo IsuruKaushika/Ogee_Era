@@ -13,6 +13,7 @@ import DeliveredOrders from "./pages/DeliveredOrders";
 import Edit from "./pages/Edit";
 import Home from "./pages/Home";
 import Customers from "./pages/Customers";
+import Transactions from "./pages/Transactions";
 
 import Login from "./components/Login";
 import { useState } from "react";
@@ -58,6 +59,10 @@ const App = () => {
                 <Route
                   path="/DeliveredOrders"
                   element={<DeliveredOrders token={token} />}
+                />
+                <Route
+                  path="/transactions"
+                  element={<Transactions token={token} />}
                 />
                 <Route
                   path="/customers"

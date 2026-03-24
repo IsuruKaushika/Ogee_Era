@@ -6,6 +6,7 @@ import { FaUsers } from "react-icons/fa";
 import { BsBoxSeam } from "react-icons/bs";
 import { FiPackage } from "react-icons/fi";
 import { TbTruckDelivery } from "react-icons/tb";
+import { HiOutlineCreditCard } from "react-icons/hi";
 
 const Sidebar = () => {
   return (
@@ -65,6 +66,14 @@ const Sidebar = () => {
         >
           <TbTruckDelivery className="w-5 h-5 text-gray-700" />
           <p className="hidden md:block">Delivered Orders</p>
+        </NavLink>
+
+        <NavLink
+          className="flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l"
+          to="/transactions"
+        >
+          <HiOutlineCreditCard className="w-5 h-5 text-gray-700" />
+          <p className="hidden md:block">Transactions</p>
         </NavLink>
       </div>
     </div>

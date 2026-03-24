@@ -1,5 +1,5 @@
 import React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { backendUrl, currency } from '../App'
 import axios from 'axios'
 import { toast } from 'react-toastify'
@@ -10,6 +10,10 @@ import { useNavigate } from 'react-router-dom';
 const List = ({ token }) => {
   const [list, setList] = useState([])
   const [isUpdating, setIsUpdating] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('All Categories')
+  const [stockFilter, setStockFilter] = useState('All Stock')
+  const [bestsellerFilter, setBestsellerFilter] = useState('All Products')
   const navigate = useNavigate()
 
   const fetchList = async () => {
@@ -84,6 +88,48 @@ const List = ({ token }) => {
 
   // Stock status options
   const stockOptions = ['In Stock', 'Out of Stock', 'Limited Stock']
+  const categoryOptions = useMemo(() => {
+    const categories = [...new Set(list.map((item) => item.category).filter(Boolean))]
+    return ['All Categories', ...categories]
+  }, [list])
+
+  const filteredList = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase()
+
+    return list.filter((item) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          item.name,
+          item.category,
+          item.subCategory,
+          item.description,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedSearch)
+
+      const matchesCategory =
+        categoryFilter === 'All Categories' || item.category === categoryFilter
+
+      const matchesStock =
+        stockFilter === 'All Stock' || item.stockStatus === stockFilter
+
+      const matchesBestseller =
+        bestsellerFilter === 'All Products' ||
+        (bestsellerFilter === 'Bestsellers' ? item.bestseller : !item.bestseller)
+
+      return matchesSearch && matchesCategory && matchesStock && matchesBestseller
+    })
+  }, [list, searchTerm, categoryFilter, stockFilter, bestsellerFilter])
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setCategoryFilter('All Categories')
+    setStockFilter('All Stock')
+    setBestsellerFilter('All Products')
+  }
 
   // Function to get background color based on stock status
   const getStatusColor = (status) => {
@@ -101,7 +147,69 @@ const List = ({ token }) => {
 
   return (
     <>
-      <p className='mb-2'>All Product List</p>
+      <div className='mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
+        <div>
+          <p className='text-lg font-semibold text-gray-800'>All Product List</p>
+          <p className='text-sm text-gray-500'>Search and filter products by category, stock, and bestseller status.</p>
+        </div>
+        <p className='text-sm text-gray-600'>
+          {filteredList.length} product{filteredList.length !== 1 ? 's' : ''}
+        </p>
+      </div>
+
+      <div className='mb-5 grid grid-cols-1 gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_auto]'>
+        <input
+          type='text'
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder='Search by name, category, subcategory, or description'
+          className='w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 outline-none transition focus:border-gray-500'
+        />
+
+        <select
+          value={categoryFilter}
+          onChange={(event) => setCategoryFilter(event.target.value)}
+          className='w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 outline-none transition focus:border-gray-500'
+        >
+          {categoryOptions.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={stockFilter}
+          onChange={(event) => setStockFilter(event.target.value)}
+          className='w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 outline-none transition focus:border-gray-500'
+        >
+          <option value='All Stock'>All Stock</option>
+          {stockOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={bestsellerFilter}
+          onChange={(event) => setBestsellerFilter(event.target.value)}
+          className='w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 outline-none transition focus:border-gray-500'
+        >
+          <option value='All Products'>All Products</option>
+          <option value='Bestsellers'>Bestsellers</option>
+          <option value='Regular Products'>Regular Products</option>
+        </select>
+
+        <button
+          type='button'
+          onClick={clearFilters}
+          className='rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50'
+        >
+          Clear
+        </button>
+      </div>
+
       <div className='flex flex-col gap-2'>
         {/*---ListTable Header---*/}
         <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr_1fr] items-center py-1 px-2 border bg-gray-100 text-sm'>
@@ -116,7 +224,7 @@ const List = ({ token }) => {
         
         {/*-------Product List-------- */}
         {
-          list.map((item, index) => (
+          filteredList.map((item, index) => (
             <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr_1fr] items-center gap-2 py-1 px-2 border text-sm' key={index}>
               <img className='w-12' src={item.image[0]} alt=""/>
               <p>{item.name}</p>
@@ -158,9 +266,9 @@ const List = ({ token }) => {
         }
         
         {/* Show message if no products */}
-        {list.length === 0 && (
+        {filteredList.length === 0 && (
           <div className="py-4 text-center text-gray-500">
-            No products found
+            No products match the current search or filters
           </div>
         )}
       </div>

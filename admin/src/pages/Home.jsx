@@ -271,6 +271,11 @@ const Home = ({ token }) => {
       (order) =>
         order.status !== "Failed" && order.status !== "Pending Payment",
     );
+    const totalOrders = orders.filter(
+      (order) =>
+        order.paymentMethod === "COD" ||
+        (order.paymentMethod === "Payhere" && order.payment),
+    );
 
     const totalSales = validOrders.reduce(
       (sum, order) => sum + Number(order.amount || 0),
@@ -364,7 +369,7 @@ const Home = ({ token }) => {
       totalSales,
       monthlySales,
       deliveredCount: deliveredOrders.length,
-      totalOrders: orders.length,
+      totalOrders: totalOrders.length,
       latestTransactions,
       trendingProducts,
       stockBreakdown,
@@ -398,7 +403,7 @@ const Home = ({ token }) => {
         <StatCard
           title="Total Orders"
           value={analytics.totalOrders}
-          note="All order statuses"
+          note="Paid + COD"
         />
         <StatCard
           title="Delivered Orders"

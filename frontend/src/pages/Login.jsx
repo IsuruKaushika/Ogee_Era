@@ -3,7 +3,7 @@ import { useState, useContext, useEffect } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState("Login");
@@ -232,10 +232,14 @@ const Login = () => {
       {(currentState === "Login" || currentState === "Sign Up") && (
         <div className="w-full flex flex-col items-center gap-3 mt-2">
           <p className="text-xs text-gray-500">or continue with</p>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-          />
+          <GoogleOAuthProvider
+            clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ""}
+          >
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+            />
+          </GoogleOAuthProvider>
         </div>
       )}
     </form>

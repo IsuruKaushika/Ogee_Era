@@ -13,7 +13,8 @@ const orderSchema = new mongoose.Schema({
     // Fields for PayHere integration
     paymentId: {type: String}, // PayHere payment reference ID
     paymentDetails: {type: Object} // Store full payment response from PayHere
-});
-
+  },
+  { timestamps: true },
+);
 const orderModel = mongoose.models.order || mongoose.model('order', orderSchema);
 export default orderModel;
