@@ -31,7 +31,7 @@ const App = () => {
       <ToastContainer />
       <ScrollToTop />
       <Navbar />
-      <div className="mt-[96px]">
+      <div className="mt-[72px] md:mt-[96px]">
         <SearchBar />
         <Routes>
           <Route path="/" element={<Home />} />

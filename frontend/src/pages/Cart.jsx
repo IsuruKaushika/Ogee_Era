@@ -39,6 +39,15 @@ const Cart = () => {
         <Title text1={"YOUR"} text2={"CART"} />
       </div>
       <div>
+        {cartData.length > 0 && (
+          <div className="mb-2 hidden grid-cols-[minmax(0,4fr)_minmax(120px,1fr)_minmax(140px,1fr)_minmax(120px,1fr)_48px] gap-4 border-b border-gray-300 pb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 sm:grid">
+            <p>Product</p>
+            <p className="text-center">Price</p>
+            <p className="text-center">Quantity</p>
+            <p className="text-center">Subtotal</p>
+            <span className="sr-only">Remove</span>
+          </div>
+        )}
         {cartData.map((item, index) => {
           const productData = products.find(
             (product) => product._id === item._id,
@@ -56,14 +65,15 @@ const Cart = () => {
               key={index}
               className="border-b border-gray-200 py-4 text-gray-700"
             >
-              <div className=" bg-white sm:hidden">
+              {/* Mobile Layout */}
+              <div className=" bg-white md:hidden">
                 <div className="flex items-start gap-3">
                   <Link
                     className="cursor-pointer"
                     to={`/product/${productData._id}`}
                   >
                     <img
-                      className="h-24 w-20 object-cover"
+                      className="h-full w-20 object-cover"
                       src={productData.image[0]}
                       alt={productData.name}
                       onClick={navigate}
@@ -86,19 +96,21 @@ const Cart = () => {
                         className="shrink-0 rounded-full border border-gray-300 p-2"
                         aria-label={`Remove ${productData.name} from cart`}
                       >
-                        <img className="w-4" src={assets.bin_icon} alt="" />
+                        <img className="w-3" src={assets.bin_icon} alt="" />
                       </button>
                     </div>
 
-                    <div className="mt-2">
-                      <div className="grid grid-cols-2 gap-y-2 text-xs">
+                    <div className="">
+                      <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-3 py-2 text-xs">
                         <p className="text-gray-500">Size</p>
                         <p className="text-right font-medium text-gray-800">
                           {item.size}
                         </p>
+                      </div>
 
+                      <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-3 py-2 text-xs">
                         <p className="text-gray-500">Unit Price</p>
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 text-right">
                           <span className="font-semibold text-gray-900">
                             {currency}
                             {discountedPrice.toFixed(2)}
@@ -110,7 +122,9 @@ const Cart = () => {
                             </span>
                           )}
                         </div>
+                      </div>
 
+                      <div className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
                         <p className="text-gray-500">Subtotal</p>
                         <p className="text-right font-semibold text-gray-900">
                           {currency}
@@ -168,15 +182,15 @@ const Cart = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="hidden grid-cols-[4fr_2fr_0.5fr] items-center gap-4 sm:grid">
+              {/* Desktop Layout */}
+              <div className="hidden grid-cols-[minmax(0,4fr)_minmax(120px,1fr)_minmax(140px,1fr)_minmax(120px,1fr)_48px] items-center gap-4 md:grid">
                 <div className="flex items-start gap-6">
                   <Link
                     className="cursor-pointer"
                     to={`/product/${productData._id}`}
                   >
                     <img
-                      className="w-16 sm:w-20"
+                      className="w-16 sm:w-20 h-full"
                       src={productData.image[0]}
                       alt=""
                       onClick={navigate}
@@ -191,50 +205,75 @@ const Cart = () => {
                         {productData.name}
                       </p>
                     </Link>
-                    <div className="flex items center gap-5 mt-2">
-                      <div className="flex items-center gap-2">
-                        {productData.discount > 0 ? (
-                          <>
-                            <p>
-                              {currency}
-                              {discountedPrice.toFixed(2)}
-                            </p>
-                            <p className="line-through text-gray-400">
-                              {currency}
-                              {productData.price}
-                            </p>
-                          </>
-                        ) : (
-                          <p>
-                            {currency}
-                            {productData.price}
-                          </p>
-                        )}
-                      </div>
-                      <p className="px-2 sm:px-3 sm:py-1 border bg-slate">
+                    <div className="mt-2">
+                      <p className="inline-flex border px-2 sm:px-3 sm:py-1">
                         {item.size}
                       </p>
                     </div>
                   </div>
                 </div>
-                <input
-                  onChange={(e) =>
-                    e.target.value === "" || e.target.value === "0"
-                      ? null
-                      : updateQuantity(
-                          item._id,
-                          item.size,
-                          Number(e.target.value),
-                        )
-                  }
-                  className="border max-w-10 sm:max-w-20 px-1 sm:px-2 py-1"
-                  type="number"
-                  min={1}
-                  defaultValue={item.quantity}
-                />
+                <div className="text-center">
+                  <div className="flex flex-col items-center gap-1">
+                    <p className="font-medium text-gray-900">
+                      {currency}
+                      {discountedPrice.toFixed(2)}
+                    </p>
+                    {productData.discount > 0 && (
+                      <p className="text-sm text-gray-400 line-through">
+                        {currency}
+                        {productData.price}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateQuantity(
+                        item._id,
+                        item.size,
+                        Math.max(1, item.quantity - 1),
+                      )
+                    }
+                    className="h-9 w-9 rounded-full bg-gray-100 text-lg leading-none"
+                    aria-label={`Decrease quantity of ${productData.name}`}
+                  >
+                    -
+                  </button>
+                  <input
+                    onChange={(e) =>
+                      e.target.value === "" || e.target.value === "0"
+                        ? null
+                        : updateQuantity(
+                            item._id,
+                            item.size,
+                            Number(e.target.value),
+                          )
+                    }
+                    className="w-16 rounded-lg border border-gray-300 py-1 text-center text-sm"
+                    type="number"
+                    min={1}
+                    value={item.quantity}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateQuantity(item._id, item.size, item.quantity + 1)
+                    }
+                    className="h-9 w-9 rounded-full bg-gray-100 text-lg leading-none"
+                    aria-label={`Increase quantity of ${productData.name}`}
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-center font-semibold text-gray-900">
+                  {currency}
+                  {lineTotal.toFixed(2)}
+                </p>
                 <img
                   onClick={() => updateQuantity(item._id, item.size, 0)}
-                  className="w-4 mr-4 sm:w-5 cursor-pointer"
+                  className="mx-auto w-4 cursor-pointer sm:w-4"
                   src={assets.bin_icon}
                   alt=""
                 />

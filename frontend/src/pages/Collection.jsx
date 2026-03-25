@@ -102,7 +102,7 @@ const Collection = () => {
   }, [subCategory]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-1 sm:gap-10 pt-10">
+    <div className="flex flex-col md:flex-row gap-1 sm:gap-10 pt-4 md:pt-10">
       {/*filter*/}
       <div className="min-w-44 lg:min-w-60">
         <p
@@ -258,9 +258,9 @@ const Collection = () => {
               onChange={(e) => setSortType(e.target.value)}
               className="border-2 border-gray-300 text-sm px-2 py-1.5"
             >
-              <option value="relavent">Sort by:Relevent</option>
-              <option value="low-high">Sort by:Low to High</option>
-              <option value="high-low">Sort by:High to Low</option>
+              <option value="relavent">Sort by: Newest first</option>
+              <option value="low-high">Sort by: Low to High</option>
+              <option value="high-low">Sort by: High to Low</option>
             </select>
           </div>
         </div>

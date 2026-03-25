@@ -29,12 +29,21 @@ const Navbar = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 flex items-center font-medium z-50 border-b border-gray-200 bg-white px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] h-24 ">
+    <div className="fixed top-0 left-0 right-0 flex items-center font-medium z-50 border-b border-gray-200 bg-white px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] h-[72px] md:h-24 ">
       <div className="relative w-full mx-auto">
         {/* Desktop Navbar */}
         <div className="hidden sm:flex items-center justify-between">
           <Link to="/">
-            <img src={assets.logo} className="w-20" alt="Logo" />
+            <img
+              src={assets.logo}
+              className="w-20"
+              alt="Logo"
+              width="80"
+              height="80"
+              fetchPriority="high"
+              loading="eager"
+              decoding="async"
+            />
           </Link>
 
           <ul className="flex gap-5 text-sm text-gray-700">
@@ -144,7 +153,15 @@ const Navbar = () => {
           </div>
 
           <Link to="/" className="absolute left-1/2 -translate-x-1/2">
-            <img src={assets.logo} className="w-20" alt="Logo" />
+            <img
+              src={assets.logo}
+              className="w-20"
+              alt="Logo"
+              width="80"
+              height="80"
+              loading="eager"
+              decoding="async"
+            />
           </Link>
 
           <div className="flex items-center gap-5">

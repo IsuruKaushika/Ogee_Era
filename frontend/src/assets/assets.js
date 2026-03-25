@@ -74,6 +74,8 @@ import razorpay_logo from './razorpay_logo.png'
 import stripe_logo from './stripe_logo.png'
 import cross_icon from './cross_icon.png'
 import company from './company.png'
+import IvoryBellTop from './IvoryBellTop.webp'
+import TropicalGlowSarong from './TropicalGlowSarong.webp'
 
 export const assets = {
     logo,
@@ -723,3 +725,16 @@ export const products = [
     }
 
 ]
+
+export const HeroImages = [
+  {
+    id: 1,
+    src: IvoryBellTop,
+    name: "Ivory Bell Top",
+  },
+  {
+    id: 2,
+    src: TropicalGlowSarong,
+    name: "Tropical Glow Sarong",
+  },
+];
