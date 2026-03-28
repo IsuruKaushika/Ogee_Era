@@ -1,16 +1,15 @@
-import React, { useEffect } from 'react'
-import { useContext } from 'react';
-import { useState } from 'react';
-import { ShopContext } from '../context/ShopContext'
-import ProductItem from './ProductItem'
-import Title from './Title'
-
-import { assets } from '../assets/assets';
+import React, { useEffect } from "react";
+import { useContext } from "react";
+import { useState } from "react";
+import { ShopContext } from "../context/ShopContext";
+import ProductItem from "./ProductItem";
+import ProductGridSkeleton from "./ProductGridSkeleton";
+import Title from "./Title";
 
 
 const RelatedProducts = ({category,subCategory}) => {
 
-    const {products} = useContext(ShopContext);
+    const { products, isProductsLoading } = useContext(ShopContext);
     const[related,setRelated] = useState([]);
 
     useEffect(()=>{
@@ -30,19 +29,23 @@ const RelatedProducts = ({category,subCategory}) => {
       <div className="text-center text-3xl py-2">
         <Title text1={"RELATED"} text2={"PRODUCTS"} />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6">
-        {related.map((item, index) => (
-          <ProductItem
-            key={index}
-            id={item._id}
-            name={item.name}
-            price={item.price}
-            image={item.image}
-            discount={item.discount}
-            stockStatus={item.stockStatus}
-          />
-        ))}
-      </div>
+      {isProductsLoading ? (
+        <ProductGridSkeleton count={5} />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6">
+          {related.map((item, index) => (
+            <ProductItem
+              key={index}
+              id={item._id}
+              name={item.name}
+              price={item.price}
+              image={item.image}
+              discount={item.discount}
+              stockStatus={item.stockStatus}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

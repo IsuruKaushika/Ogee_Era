@@ -12,23 +12,21 @@ const Home = () => {
     <div>
       <Hero />
 
-      <RevealOnScroll delay={40}>
-        <LatestCollection />
-      </RevealOnScroll>
+      <LatestCollection />
 
-      <RevealOnScroll delay={80}>
+      <RevealOnScroll delay={20}>
         <SpecialOffers />
       </RevealOnScroll>
 
-      <RevealOnScroll delay={120}>
+      <RevealOnScroll delay={40}>
         <BestSeller />
       </RevealOnScroll>
 
-      <RevealOnScroll delay={160}>
+      <RevealOnScroll delay={50}>
         <OurPolicy />
       </RevealOnScroll>
 
-      <RevealOnScroll delay={200} distance={18}>
+      <RevealOnScroll delay={60} distance={18}>
         <NewsLetterBox />
       </RevealOnScroll>
     </div>

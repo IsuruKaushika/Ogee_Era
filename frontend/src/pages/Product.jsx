@@ -3,15 +3,13 @@ import { useParams } from "react-router-dom";
 import { useContext } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { useEffect } from "react";
-import ProductItem from "../components/ProductItem";
-import { assets } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
 import RelatedProducts from "../components/RelatedProducts";
+import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
 import { FiHeart } from "react-icons/fi";
 
 const Product = () => {
   const { productId } = useParams();
-  const { products, currency, addToCart, isInWishlist, toggleWishlist } =
+  const { products, currency, addToCart, isInWishlist, toggleWishlist, isProductsLoading } =
     useContext(ShopContext);
   const [productData, setProductData] = useState(false);
   const [image, setImage] = useState("");
@@ -72,10 +70,18 @@ const Product = () => {
     setSizeError(false);
 
     // Add to cart with either selected size or default value
-    const sizeToUse =
-      productData.sizes && productData.sizes.length > 0 ? size : "default";
+    const sizeToUse = productData.sizes && productData.sizes.length > 0 ? size : "default";
     addToCart(productData._id, sizeToUse);
   };
+
+  if (isProductsLoading && !productData) {
+    return (
+      <div>
+        <ProductDetailsSkeleton />
+        <RelatedProducts />
+      </div>
+    );
+  }
 
   return productData ? (
     <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
@@ -107,10 +113,7 @@ const Product = () => {
             <div className="mt-5 flex sm:flex-col md:flex-row items-start md:items-center gap-3">
               <p className="text-3xl font-medium">
                 {currency}{" "}
-                {(
-                  productData.price -
-                  (productData.price * productData.discount) / 100
-                ).toFixed(2)}
+                {(productData.price - (productData.price * productData.discount) / 100).toFixed(2)}
               </p>
               <div className="flex items-center gap-3">
                 <p className="text-xl text-gray-500 line-through">
@@ -130,9 +133,7 @@ const Product = () => {
           {/* Display stock status here */}
           {renderStockStatus()}
 
-          <p className="mt-5 mb-8 text-gray-500 md:w-4/5">
-            {productData.description}
-          </p>
+          <p className="mt-5 mb-8 text-gray-500 md:w-4/5">{productData.description}</p>
 
           {/* Size Table - Only display if available */}
           {productData.sizeChart && (
@@ -169,11 +170,7 @@ const Product = () => {
                 ))}
               </div>
               {/* Show error message if needed */}
-              {sizeError && (
-                <p className="text-red-500 text-sm mt-1">
-                  Please select a size
-                </p>
-              )}
+              {sizeError && <p className="text-red-500 text-sm mt-1">Please select a size</p>}
             </div>
           )}
 
@@ -187,9 +184,7 @@ const Product = () => {
             } text-white px-8 py-3 text-sm mt-6`}
             disabled={productData.stockStatus === "Out of Stock"}
           >
-            {productData.stockStatus === "Out of Stock"
-              ? "OUT OF STOCK"
-              : "ADD TO CART"}
+            {productData.stockStatus === "Out of Stock" ? "OUT OF STOCK" : "ADD TO CART"}
           </button>
 
           <button
@@ -225,21 +220,14 @@ const Product = () => {
             </button>
             <h3 className="text-xl font-medium p-4">Size Chart</h3>
             <div className="p-4">
-              <img
-                src={productData.sizeChart}
-                alt="Size Chart"
-                className="w-full h-auto"
-              />
+              <img src={productData.sizeChart} alt="Size Chart" className="w-full h-auto" />
             </div>
           </div>
         </div>
       )}
 
       {/*related products*/}
-      <RelatedProducts
-        category={productData.category}
-        subCategory={productData.subCategory}
-      />
+      <RelatedProducts category={productData.category} subCategory={productData.subCategory} />
     </div>
   ) : (
     <div className="opacity-0"></div>

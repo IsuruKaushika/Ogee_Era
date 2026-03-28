@@ -24,19 +24,23 @@ const ProductItem = ({ id, image, name, price, stockStatus, discount }) => {
       <div className="overflow-hidden relative">
         <picture>
           <source
-            srcSet={`${image[0].replace("/upload/", "/upload/f_auto,q_auto,fl_lossy/")}`}
+            srcSet={`${image[0].replace("/upload/", "/upload/f_avif,q_auto,w_640,c_limit/")}`}
             type="image/avif"
           />
           <source
-            srcSet={`${image[0].replace("/upload/", "/upload/f_auto,q_auto/")}`}
+            srcSet={`${image[0].replace("/upload/", "/upload/f_webp,q_auto,w_640,c_limit/")}`}
             type="image/webp"
           />
           <img
-            className="hover:scale-110 transition ease-in-out"
-            src={image[0]}
-            alt="Product Image"
-            loading="eager"
-            fetchpriority="high"
+            className="hover:scale-110 transition ease-in-out aspect-[2/3] w-full object-cover"
+            src={image[0].replace(
+              "/upload/",
+              "/upload/f_auto,q_auto,w_640,c_limit/",
+            )}
+            alt={name}
+            loading="lazy"
+            decoding="async"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           />
         </picture>
         {/* Discount Badge */}

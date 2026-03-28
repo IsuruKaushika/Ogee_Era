@@ -5,12 +5,14 @@ import { useState } from "react";
 import { assets } from "../assets/assets";
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
+import ProductGridSkeleton from "../components/ProductGridSkeleton";
 import RevealOnScroll from "../components/RevealOnScroll";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 const Collection = () => {
-  const { products, search, showSearch } = useContext(ShopContext);
+  const { products, search, showSearch, isProductsLoading } =
+    useContext(ShopContext);
   const [showFilter, setShowFilter] = useState(false);
   const [filterProducts, setFilterProducts] = useState([]);
   const [category, setCategory] = useState([]);
@@ -265,27 +267,34 @@ const Collection = () => {
           </div>
         </div>
         {/*Map Products*/}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 gap-y-6">
-          {filterProducts.map((item) => (
-            <RevealOnScroll
-              key={item._id}
-              delay={40}
-              distance={24}
-              duration={650}
-              threshold={0.08}
-            >
-              <ProductItem
-                name={item.name}
-                id={item._id}
-                image={item.image}
-                price={item.price}
+        {isProductsLoading ? (
+          <ProductGridSkeleton
+            count={8}
+            gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 gap-y-6"
+          />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 gap-y-6">
+            {filterProducts.map((item) => (
+              <RevealOnScroll
+                key={item._id}
+                delay={20}
+                distance={24}
+                duration={650}
+                threshold={0.08}
+              >
+                <ProductItem
+                  name={item.name}
+                  id={item._id}
+                  image={item.image}
+                  price={item.price}
                 stockStatus={item.stockStatus} // Pass stock status to ProductItem
                 stock={item.stock} // Pass stock information to ProductItem
-                discount={item.discount}
-              />
-            </RevealOnScroll>
-          ))}
-        </div>
+                  discount={item.discount}
+                />
+              </RevealOnScroll>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
