@@ -2,14 +2,19 @@ import React, { useContext, useMemo } from "react";
 import { ShopContext } from "../context/ShopContext";
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
+import WishlistSkeleton from "../components/WishlistSkeleton";
 
 const Wishlist = () => {
-  const { products, wishlistItems, navigate } = useContext(ShopContext);
+  const { products, wishlistItems, navigate, isProductsLoading } = useContext(ShopContext);
 
   const wishlistProducts = useMemo(
     () => products.filter((product) => Boolean(wishlistItems?.[product._id])),
     [products, wishlistItems],
   );
+
+  if (isProductsLoading) {
+    return <WishlistSkeleton />;
+  }
 
   return (
     <div className="border-t pt-14">

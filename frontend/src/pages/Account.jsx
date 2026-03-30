@@ -3,17 +3,12 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { googleLogout } from "@react-oauth/google";
 import Title from "../components/Title";
+import AccountSkeleton from "../components/AccountSkeleton";
 import { ShopContext } from "../context/ShopContext";
 
 const Account = () => {
-  const {
-    token,
-    backendUrl,
-    navigate,
-    setToken,
-    setCartItems,
-    setWishlistItems,
-  } = useContext(ShopContext);
+  const { token, backendUrl, navigate, setToken, setCartItems, setWishlistItems } =
+    useContext(ShopContext);
 
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState("");
@@ -25,11 +20,7 @@ const Account = () => {
 
     try {
       setLoading(true);
-      const response = await axios.post(
-        backendUrl + "/api/user/me",
-        {},
-        { headers: { token } },
-      );
+      const response = await axios.post(backendUrl + "/api/user/me", {}, { headers: { token } });
 
       if (response.data.success) {
         const user = response.data.user;
@@ -130,6 +121,17 @@ const Account = () => {
     );
   }
 
+  if (loading && !profile) {
+    return (
+      <div className="border-t pt-14 pb-10">
+        <div className="text-2xl mb-6">
+          <Title text1={"MY"} text2={"ACCOUNT"} />
+        </div>
+        <AccountSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="border-t pt-14 pb-10">
       <div className="text-2xl mb-6">
@@ -171,9 +173,7 @@ const Account = () => {
                 <div className="border border-gray-200 rounded p-3 bg-gray-50">
                   <p className="text-gray-500">Member since</p>
                   <p className="mt-1 font-medium text-gray-800">
-                    {profile?.createdAt
-                      ? new Date(profile.createdAt).toLocaleDateString()
-                      : "-"}
+                    {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "-"}
                   </p>
                 </div>
               </div>
@@ -186,10 +186,7 @@ const Account = () => {
                 >
                   {saving ? "SAVING..." : "SAVE CHANGES"}
                 </button>
-                <button
-                  onClick={handleLogout}
-                  className="border border-gray-300 px-6 py-2 text-sm"
-                >
+                <button onClick={handleLogout} className="border border-gray-300 px-6 py-2 text-sm">
                   LOGOUT
                 </button>
               </div>
@@ -207,9 +204,7 @@ const Account = () => {
             </div>
             <div className="border border-gray-200 rounded p-3">
               <p className="text-gray-500">Wishlist</p>
-              <p className="text-lg font-semibold mt-1">
-                {stats.wishlistCount}
-              </p>
+              <p className="text-lg font-semibold mt-1">{stats.wishlistCount}</p>
             </div>
           </div>
 

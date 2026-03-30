@@ -7,10 +7,11 @@ import { assets } from "../assets/assets";
 import Title from "../components/Title";
 
 import CartTotal from "../components/CartTotal";
+import CartSkeleton from "../components/CartSkeleton";
 import { toast } from "react-toastify";
 
 const Cart = () => {
-  const { products, currency, cartItems, updateQuantity, navigate, token } =
+  const { products, isProductsLoading, currency, cartItems, updateQuantity, navigate, token } =
     useContext(ShopContext);
 
   const [cartData, setCartData] = useState([]);
@@ -33,6 +34,10 @@ const Cart = () => {
     }
   }, [cartItems, products]);
 
+  if (isProductsLoading) {
+    return <CartSkeleton />;
+  }
+
   return (
     <div className="border-t pt-14">
       <div className="text-2xl mb-3">
@@ -49,9 +54,7 @@ const Cart = () => {
           </div>
         )}
         {cartData.map((item, index) => {
-          const productData = products.find(
-            (product) => product._id === item._id,
-          );
+          const productData = products.find((product) => product._id === item._id);
           if (!productData) return null;
 
           const discountedPrice =
@@ -61,17 +64,11 @@ const Cart = () => {
           const lineTotal = discountedPrice * item.quantity;
 
           return (
-            <div
-              key={index}
-              className="border-b border-gray-200 py-4 text-gray-700"
-            >
+            <div key={index} className="border-b border-gray-200 py-4 text-gray-700">
               {/* Mobile Layout */}
               <div className=" bg-white md:hidden">
                 <div className="flex items-start gap-3">
-                  <Link
-                    className="cursor-pointer"
-                    to={`/product/${productData._id}`}
-                  >
+                  <Link className="cursor-pointer" to={`/product/${productData._id}`}>
                     <img
                       className="h-full w-20 object-cover"
                       src={productData.image[0]}
@@ -82,10 +79,7 @@ const Cart = () => {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <Link
-                        className="cursor-pointer"
-                        to={`/product/${productData._id}`}
-                      >
+                      <Link className="cursor-pointer" to={`/product/${productData._id}`}>
                         <p className="line-clamp-2 text-sm font-semibold leading-5 text-gray-900">
                           {productData.name}
                         </p>
@@ -103,9 +97,7 @@ const Cart = () => {
                     <div className="">
                       <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-3 py-2 text-xs">
                         <p className="text-gray-500">Size</p>
-                        <p className="text-right font-medium text-gray-800">
-                          {item.size}
-                        </p>
+                        <p className="text-right font-medium text-gray-800">{item.size}</p>
                       </div>
 
                       <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-3 py-2 text-xs">
@@ -143,11 +135,7 @@ const Cart = () => {
                     <button
                       type="button"
                       onClick={() =>
-                        updateQuantity(
-                          item._id,
-                          item.size,
-                          Math.max(1, item.quantity - 1),
-                        )
+                        updateQuantity(item._id, item.size, Math.max(1, item.quantity - 1))
                       }
                       className="h-8 w-8 rounded-full bg-gray-100 text-lg leading-none"
                       aria-label={`Decrease quantity of ${productData.name}`}
@@ -158,11 +146,7 @@ const Cart = () => {
                       onChange={(e) =>
                         e.target.value === "" || e.target.value === "0"
                           ? null
-                          : updateQuantity(
-                              item._id,
-                              item.size,
-                              Number(e.target.value),
-                            )
+                          : updateQuantity(item._id, item.size, Number(e.target.value))
                       }
                       className="w-14 rounded-lg border border-gray-300 py-1 text-center text-sm"
                       type="number"
@@ -171,9 +155,7 @@ const Cart = () => {
                     />
                     <button
                       type="button"
-                      onClick={() =>
-                        updateQuantity(item._id, item.size, item.quantity + 1)
-                      }
+                      onClick={() => updateQuantity(item._id, item.size, item.quantity + 1)}
                       className="h-8 w-8 rounded-full bg-gray-100 text-lg leading-none"
                       aria-label={`Increase quantity of ${productData.name}`}
                     >
@@ -185,10 +167,7 @@ const Cart = () => {
               {/* Desktop Layout */}
               <div className="hidden grid-cols-[minmax(0,4fr)_minmax(120px,1fr)_minmax(140px,1fr)_minmax(120px,1fr)_48px] items-center gap-4 md:grid">
                 <div className="flex items-start gap-6">
-                  <Link
-                    className="cursor-pointer"
-                    to={`/product/${productData._id}`}
-                  >
+                  <Link className="cursor-pointer" to={`/product/${productData._id}`}>
                     <img
                       className="w-16 sm:w-20 h-full"
                       src={productData.image[0]}
@@ -197,18 +176,11 @@ const Cart = () => {
                     />
                   </Link>
                   <div>
-                    <Link
-                      className="cursor-pointer"
-                      to={`/product/${productData._id}`}
-                    >
-                      <p className="text-xs sm:text-lg font-medium">
-                        {productData.name}
-                      </p>
+                    <Link className="cursor-pointer" to={`/product/${productData._id}`}>
+                      <p className="text-xs sm:text-lg font-medium">{productData.name}</p>
                     </Link>
                     <div className="mt-2">
-                      <p className="inline-flex border px-2 sm:px-3 sm:py-1">
-                        {item.size}
-                      </p>
+                      <p className="inline-flex border px-2 sm:px-3 sm:py-1">{item.size}</p>
                     </div>
                   </div>
                 </div>
@@ -230,11 +202,7 @@ const Cart = () => {
                   <button
                     type="button"
                     onClick={() =>
-                      updateQuantity(
-                        item._id,
-                        item.size,
-                        Math.max(1, item.quantity - 1),
-                      )
+                      updateQuantity(item._id, item.size, Math.max(1, item.quantity - 1))
                     }
                     className="h-9 w-9 rounded-full bg-gray-100 text-lg leading-none"
                     aria-label={`Decrease quantity of ${productData.name}`}
@@ -245,11 +213,7 @@ const Cart = () => {
                     onChange={(e) =>
                       e.target.value === "" || e.target.value === "0"
                         ? null
-                        : updateQuantity(
-                            item._id,
-                            item.size,
-                            Number(e.target.value),
-                          )
+                        : updateQuantity(item._id, item.size, Number(e.target.value))
                     }
                     className="w-16 rounded-lg border border-gray-300 py-1 text-center text-sm"
                     type="number"
@@ -258,9 +222,7 @@ const Cart = () => {
                   />
                   <button
                     type="button"
-                    onClick={() =>
-                      updateQuantity(item._id, item.size, item.quantity + 1)
-                    }
+                    onClick={() => updateQuantity(item._id, item.size, item.quantity + 1)}
                     className="h-9 w-9 rounded-full bg-gray-100 text-lg leading-none"
                     aria-label={`Increase quantity of ${productData.name}`}
                   >

@@ -5,6 +5,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
 import { validatePlaceOrderForm } from "../utils/validatePlaceOrderForm";
+import PlaceOrderSkeleton from "../components/PlaceOrderSkeleton";
 
 const PlaceOrder = () => {
   const [method, setMethod] = useState("cod");
@@ -19,6 +20,7 @@ const PlaceOrder = () => {
     getCartDiscount,
     delivery_fee,
     products,
+    isProductsLoading,
   } = useContext(ShopContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,9 +42,7 @@ const PlaceOrder = () => {
   for (const productId in cartItems) {
     for (const size in cartItems[productId]) {
       if (cartItems[productId][size] > 0) {
-        const itemInfo = structuredClone(
-          products.find((product) => product._id === productId),
-        );
+        const itemInfo = structuredClone(products.find((product) => product._id === productId));
         if (itemInfo) {
           itemInfo.size = size;
           itemInfo.quantity = cartItems[productId][size];
@@ -55,6 +55,10 @@ const PlaceOrder = () => {
   const cartSubtotal = Number(getCartAmount()) || 0;
   const cartDiscount = Number(getCartDiscount()) || 0;
   const hasOrderItems = orderItems.length > 0 && cartSubtotal > 0;
+
+  if (isProductsLoading) {
+    return <PlaceOrderSkeleton />;
+  }
 
   if (!hasOrderItems) {
     return (
@@ -90,13 +94,7 @@ const PlaceOrder = () => {
     setFormData((data) => ({ ...data, [name]: value }));
   };
 
-  const initiatePayherePayment = (
-    orderData,
-    orderId,
-    merchantId,
-    sandbox,
-    hash,
-  ) => {
+  const initiatePayherePayment = (orderData, orderId, merchantId, sandbox, hash) => {
     const paymentObject = {
       sandbox: sandbox, // Will be true in development, false in production
       merchant_id: merchantId,
@@ -104,9 +102,7 @@ const PlaceOrder = () => {
       cancel_url: `${window.location.origin}/payment-failed`,
       notify_url: `${backendUrl}/api/order/payhere-notify`,
       order_id: orderId,
-      items: orderData.items
-        .map((item) => `${item.name} (${item.size})`)
-        .join(", "),
+      items: orderData.items.map((item) => `${item.name} (${item.size})`).join(", "),
       amount: orderData.amount,
       currency: "LKR", // Replace with your currency if different
       first_name: orderData.address.firstName,
@@ -194,8 +190,7 @@ const PlaceOrder = () => {
       return;
     }
 
-    const { isValid, errors: validationErrors } =
-      await validatePlaceOrderForm(formData);
+    const { isValid, errors: validationErrors } = await validatePlaceOrderForm(formData);
 
     if (!isValid) {
       setErrors(validationErrors);
@@ -218,19 +213,13 @@ const PlaceOrder = () => {
       switch (method) {
         // API calls COD
         case "cod":
-          const response = await axios.post(
-            backendUrl + "/api/order/place",
-            orderData,
-            { headers: { token } },
-          );
+          const response = await axios.post(backendUrl + "/api/order/place", orderData, {
+            headers: { token },
+          });
 
           if (response.data.success) {
             // Add order to Google Sheet
-            await addOrderToGoogleSheet(
-              orderData,
-              response.data.orderId,
-              "Placed",
-            );
+            await addOrderToGoogleSheet(orderData, response.data.orderId, "Placed");
 
             toast.success(response.data.message);
             setCartItems({});
@@ -250,11 +239,7 @@ const PlaceOrder = () => {
 
           if (payhereResponse.data.success) {
             // Add order to Google Sheet with pending status
-            await addOrderToGoogleSheet(
-              orderData,
-              payhereResponse.data.orderId,
-              "Pending Payment",
-            );
+            await addOrderToGoogleSheet(orderData, payhereResponse.data.orderId, "Pending Payment");
 
             // Initiate PayHere payment with the order ID, merchant ID, and hash received from backend
             initiatePayherePayment(
@@ -265,9 +250,7 @@ const PlaceOrder = () => {
               payhereResponse.data.hash, // Pass the hash from backend
             );
           } else {
-            toast.error(
-              payhereResponse.data.message || "Failed to create order",
-            );
+            toast.error(payhereResponse.data.message || "Failed to create order");
           }
           break;
 
@@ -304,9 +287,7 @@ const PlaceOrder = () => {
               type="text"
               placeholder="First name"
             />
-            {errors.firstName && (
-              <p className="text-red-500 text-xs">{errors.firstName}</p>
-            )}
+            {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
           </div>
           <div>
             <input
@@ -318,9 +299,7 @@ const PlaceOrder = () => {
               type="text"
               placeholder="Last name"
             />
-            {errors.lastName && (
-              <p className="text-red-500 text-xs">{errors.lastName}</p>
-            )}
+            {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
           </div>
         </div>
         <div>
@@ -333,9 +312,7 @@ const PlaceOrder = () => {
             type="email"
             placeholder="Email address"
           />
-          {errors.email && (
-            <p className="text-red-500 text-xs">{errors.email}</p>
-          )}
+          {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
         </div>
         <div>
           <input
@@ -347,9 +324,7 @@ const PlaceOrder = () => {
             type="text"
             placeholder="Street"
           />
-          {errors.street && (
-            <p className="text-red-500 text-xs">{errors.street}</p>
-          )}
+          {errors.street && <p className="text-red-500 text-xs">{errors.street}</p>}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -362,9 +337,7 @@ const PlaceOrder = () => {
               type="text"
               placeholder="City"
             />
-            {errors.city && (
-              <p className="text-red-500 text-xs">{errors.city}</p>
-            )}
+            {errors.city && <p className="text-red-500 text-xs">{errors.city}</p>}
           </div>
           <div>
             <input
@@ -376,9 +349,7 @@ const PlaceOrder = () => {
               type="text"
               placeholder="State"
             />
-            {errors.state && (
-              <p className="text-red-500 text-xs">{errors.state}</p>
-            )}
+            {errors.state && <p className="text-red-500 text-xs">{errors.state}</p>}
           </div>
         </div>
 
@@ -393,9 +364,7 @@ const PlaceOrder = () => {
               type="text"
               placeholder="Zipcode"
             />
-            {errors.zipcode && (
-              <p className="text-red-500 text-xs">{errors.zipcode}</p>
-            )}
+            {errors.zipcode && <p className="text-red-500 text-xs">{errors.zipcode}</p>}
           </div>
           <div>
             <input
@@ -407,9 +376,7 @@ const PlaceOrder = () => {
               type="text"
               placeholder="Country"
             />
-            {errors.country && (
-              <p className="text-red-500 text-xs">{errors.country}</p>
-            )}
+            {errors.country && <p className="text-red-500 text-xs">{errors.country}</p>}
           </div>
         </div>
         <div>
@@ -422,9 +389,7 @@ const PlaceOrder = () => {
             type="tel"
             placeholder="Phone"
           />
-          {errors.phone && (
-            <p className="text-red-500 text-xs">{errors.phone}</p>
-          )}
+          {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
         </div>
 
         <div className=" hidden md:block">
@@ -443,9 +408,7 @@ const PlaceOrder = () => {
                   method === "payhere" ? "bg-green-400" : "bg-gray-300"
                 }`}
               ></p>
-              <p className="text-blue-600 text-sm font-medium mx-4">
-                CARD PAYMENT
-              </p>
+              <p className="text-blue-600 text-sm font-medium mx-4">CARD PAYMENT</p>
             </div>
 
             {/* Cash on Delivery (COD) */}
@@ -460,9 +423,7 @@ const PlaceOrder = () => {
                   method === "cod" ? "bg-green-400" : "bg-gray-300"
                 }`}
               ></p>
-              <p className="text-gray-500 text-sm font-medium mx-4">
-                CASH ON DELIVERY
-              </p>
+              <p className="text-gray-500 text-sm font-medium mx-4">CASH ON DELIVERY</p>
             </div>
           </div>
 
@@ -472,11 +433,7 @@ const PlaceOrder = () => {
             disabled={isSubmitting || !hasOrderItems}
             className={`w-full mt-6 ${isSubmitting ? "bg-gray-500" : "bg-black hover:bg-gray-800"} text-white py-3 rounded-md text-lg font-medium transition disabled:cursor-not-allowed disabled:bg-gray-500`}
           >
-            {isSubmitting
-              ? "Processing..."
-              : method === "payhere"
-                ? "Pay Now"
-                : "Place Order"}
+            {isSubmitting ? "Processing..." : method === "payhere" ? "Pay Now" : "Place Order"}
           </button>
         </div>
       </div>
@@ -492,8 +449,7 @@ const PlaceOrder = () => {
             {orderItems.map((item) => {
               const itemPrice = Number(item.price || 0);
               const discount = Number(item.discount || 0);
-              const discountedPrice =
-                discount > 0 ? itemPrice * (1 - discount / 100) : itemPrice;
+              const discountedPrice = discount > 0 ? itemPrice * (1 - discount / 100) : itemPrice;
               const lineTotal = discountedPrice * Number(item.quantity || 0);
 
               return (
@@ -561,9 +517,7 @@ const PlaceOrder = () => {
                   method === "payhere" ? "bg-green-400" : "bg-gray-300"
                 }`}
               ></p>
-              <p className="text-blue-600 text-sm font-medium mx-4">
-                CARD PAYMENT
-              </p>
+              <p className="text-blue-600 text-sm font-medium mx-4">CARD PAYMENT</p>
             </div>
 
             {/* Cash on Delivery (COD) */}
@@ -578,9 +532,7 @@ const PlaceOrder = () => {
                   method === "cod" ? "bg-green-400" : "bg-gray-300"
                 }`}
               ></p>
-              <p className="text-gray-500 text-sm font-medium mx-4">
-                CASH ON DELIVERY
-              </p>
+              <p className="text-gray-500 text-sm font-medium mx-4">CASH ON DELIVERY</p>
             </div>
           </div>
 
@@ -590,11 +542,7 @@ const PlaceOrder = () => {
             disabled={isSubmitting || !hasOrderItems}
             className={`w-full mt-6 ${isSubmitting ? "bg-gray-500" : "bg-black hover:bg-gray-800"} text-white py-3 rounded-md text-lg font-medium transition disabled:cursor-not-allowed disabled:bg-gray-500`}
           >
-            {isSubmitting
-              ? "Processing..."
-              : method === "payhere"
-                ? "Pay Now"
-                : "Place Order"}
+            {isSubmitting ? "Processing..." : method === "payhere" ? "Pay Now" : "Place Order"}
           </button>
         </div>
       </div>
