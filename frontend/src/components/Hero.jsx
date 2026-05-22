@@ -70,7 +70,7 @@ const Hero = () => {
           {bestSellerProducts.map((product, index) => (
             <img
               key={product._id}
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out transform ${index === 0 ? "animate-fade-in" : ""} ${
+              className={`absolute inset-0 w-full h-full object-cover object-top transition-all duration-1000 ease-in-out transform ${index === 0 ? "animate-fade-in" : ""} ${
                 index === currentImageIndex
                   ? "opacity-100 scale-100 "
                   : "opacity-0 scale-105"
