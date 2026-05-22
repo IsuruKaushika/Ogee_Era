@@ -1,32 +1,53 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
-import { HeroImages } from "../assets/assets";
 
 const Hero = () => {
-  const { navigate } = useContext(ShopContext);
+  const { navigate, products, isProductsLoading } = useContext(ShopContext);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const bestSellerProducts = useMemo(
+    () =>
+      products
+        .filter((item) => item.bestseller && item.image?.[0])
+        .slice(0, 6),
+    [products],
+  );
+
+  const currentProduct = bestSellerProducts[currentImageIndex];
+
+  const getHeroImage = (image) =>
+    image?.replace("/upload/", "/upload/f_auto,q_auto,w_1200,c_limit/");
+
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [bestSellerProducts.length]);
 
   // Auto-rotate images every 4 seconds
   useEffect(() => {
-    if (HeroImages.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentImageIndex(
-          (prevIndex) => (prevIndex + 1) % HeroImages.length,
-        );
-      }, 4000);
-
-      return () => clearInterval(interval);
+    if (bestSellerProducts.length <= 1) {
+      return undefined;
     }
-  }, []);
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex(
+        (prevIndex) => (prevIndex + 1) % bestSellerProducts.length,
+      );
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [bestSellerProducts.length]);
 
   // Manual navigation functions
   const goToNext = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % HeroImages.length);
+    if (!bestSellerProducts.length) return;
+    setCurrentImageIndex(
+      (prevIndex) => (prevIndex + 1) % bestSellerProducts.length,
+    );
   };
 
   const goToPrev = () => {
+    if (!bestSellerProducts.length) return;
     setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? HeroImages.length - 1 : prevIndex - 1,
+      prevIndex === 0 ? bestSellerProducts.length - 1 : prevIndex - 1,
     );
   };
 
@@ -42,18 +63,22 @@ const Hero = () => {
           {/* {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-200 animate-pulse z-50" />
           )} */}
-          {HeroImages.map((imageData, index) => (
+          {isProductsLoading && (
+            <div className="absolute inset-0 z-30 bg-gray-200 animate-pulse" />
+          )}
+
+          {bestSellerProducts.map((product, index) => (
             <img
-              key={imageData.id}
+              key={product._id}
               className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out transform ${index === 0 ? "animate-fade-in" : ""} ${
                 index === currentImageIndex
                   ? "opacity-100 scale-100 "
                   : "opacity-0 scale-105"
               }`}
-              src={imageData.src}
-              alt={imageData.name}
+              src={getHeroImage(product.image[0])}
+              alt={product.name}
               loading="eager"
-              fetchpriority="high"
+              fetchPriority="high"
             />
           ))}
 
@@ -98,9 +123,9 @@ const Hero = () => {
 
           {/* Dots Indicator */}
           <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 space-x-2">
-            {HeroImages.map((_, index) => (
+            {bestSellerProducts.map((product, index) => (
               <button
-                key={index}
+                key={product._id}
                 onClick={() => goToSlide(index)}
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   index === currentImageIndex
@@ -159,7 +184,7 @@ const Hero = () => {
                   Now Featuring:
                 </p>
                 <p className="text-sm leading-5 text-white">
-                  {HeroImages[currentImageIndex]?.name}
+                  {currentProduct?.name}
                 </p>
               </div>
             </div>
@@ -167,9 +192,7 @@ const Hero = () => {
 
           {/* Image Info Overlay */}
           <div className="absolute bottom-16 left-4 hidden bg-black/50 px-3 py-2 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:block">
-            <p className="text-sm font-medium">
-              {HeroImages[currentImageIndex]?.name}
-            </p>
+            <p className="text-sm font-medium">{currentProduct?.name}</p>
           </div>
         </div>
       </div>
@@ -219,9 +242,7 @@ const Hero = () => {
             style={{ animationDelay: "1.2s" }}
           >
             <p className="text-sm text-gray-500">Now Featuring:</p>
-            <p className="font-medium text-lg">
-              {HeroImages[currentImageIndex]?.name}
-            </p>
+            <p className="font-medium text-lg">{currentProduct?.name}</p>
           </div>
         </div>
       </div>
