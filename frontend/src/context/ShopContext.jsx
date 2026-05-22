@@ -12,6 +12,8 @@ const ShopContextProvider = (props) => {
   const currency = "Rs.";
   const delivery_fee = 400;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const networkErrorMessage = "Unable to connect. Please refresh the page.";
+  const networkToastId = "network-error";
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [cartItems, setCartItems] = useState({});
@@ -60,7 +62,7 @@ const ShopContextProvider = (props) => {
         );
       } catch (error) {
         console.log(error);
-        toast.error(error.message);
+        toast.error(networkErrorMessage, { toastId: networkToastId });
       }
     }
   };
@@ -119,7 +121,7 @@ const ShopContextProvider = (props) => {
         );
       } catch (error) {
         console.log(error);
-        toast.error(error.message);
+        toast.error(networkErrorMessage, { toastId: networkToastId });
       }
     }
   };
@@ -141,7 +143,7 @@ const ShopContextProvider = (props) => {
     return totalAmount.toFixed(2);
   };
 
-  const getProductsData = async () => {
+  const getProductsData = async (retries = 1) => {
     setIsProductsLoading(true);
     try {
       const response = await axios.get(backendUrl + "/api/product/list");
@@ -150,11 +152,15 @@ const ShopContextProvider = (props) => {
       } else {
         toast.error(response.data.message);
       }
+      setIsProductsLoading(false);
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
-    } finally {
-      setIsProductsLoading(false);
+      if (retries > 0) {
+        setTimeout(() => getProductsData(retries - 1), 2000);
+      } else {
+        toast.error(networkErrorMessage, { toastId: networkToastId });
+        setIsProductsLoading(false);
+      }
     }
   };
 
@@ -170,7 +176,7 @@ const ShopContextProvider = (props) => {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(networkErrorMessage, { toastId: networkToastId });
     }
   };
 
@@ -187,7 +193,7 @@ const ShopContextProvider = (props) => {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(networkErrorMessage, { toastId: networkToastId });
     }
   };
 
