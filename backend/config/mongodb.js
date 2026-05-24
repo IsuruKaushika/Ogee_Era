@@ -1,14 +1,27 @@
 import mongoose from "mongoose";
-import dotenv from 'dotenv'
 
+let connectionPromise = null;
 
-const connectDB =async () => {
-    mongoose.connection.on('connected', () => {
-        console.log('Connected to MongoDB')
-    })
+const connectDB = async () => {
+    if (mongoose.connection.readyState === 1) return;
 
-    await mongoose.connect(`${process.env.MONGODB_URI}/e-commerce`)
+    if (!connectionPromise) {
+        connectionPromise = mongoose
+            .connect(`${process.env.MONGODB_URI}/e-commerce`, {
+                serverSelectionTimeoutMS: 30000,
+                connectTimeoutMS: 30000,
+            })
+            .then(() => {
+                console.log("Connected to MongoDB");
+                connectionPromise = null;
+            })
+            .catch((err) => {
+                connectionPromise = null;
+                throw err;
+            });
+    }
 
-}
+    await connectionPromise;
+};
 
 export default connectDB;

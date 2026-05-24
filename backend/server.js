@@ -13,12 +13,22 @@ import orderRouter from './routes/orderRoute.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
-connectDB()
 connectCloudinary()
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json())
 app.use(cors())
+
+// Ensure DB is ready before every request (handles serverless cold starts)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error('Database connection failed:', error);
+        res.status(503).json({ success: false, message: 'Service temporarily unavailable. Please try again.' });
+    }
+});
 
 //api endpoints
 app.use('/api/user', userRouter)
