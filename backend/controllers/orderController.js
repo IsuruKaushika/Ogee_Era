@@ -12,6 +12,12 @@ const PAYHERE_MERCHANT_ID = process.env.PAYHERE_MERCHANT_ID;
 const PAYHERE_MERCHANT_SECRET = process.env.PAYHERE_MERCHANT_SECRET;
 const PAYHERE_SANDBOX = process.env.PAYHERE_SANDBOX === "true";
 
+// A PayHere order that was never paid is only a payment attempt, not a real order.
+// COD orders (payment: false by design) and paid PayHere orders are real orders.
+const REAL_ORDERS_FILTER = {
+  $or: [{ paymentMethod: { $ne: "Payhere" } }, { payment: true }],
+};
+
 // Confirmation goes to the logged-in account's email; falls back to the checkout form email
 const getCustomerEmail = async (userId, address) => {
   try {
@@ -288,6 +294,27 @@ const payhereFailure = async(req, res) => {
     }
 }
 
+// Customer cancelled on the PayHere page: mark the unpaid attempt as Cancelled
+const cancelPendingOrder = async (req, res) => {
+    try {
+        const { userId, orderId } = req.body;
+        const order = await orderModel.findById(orderId);
+        if (
+            order &&
+            order.userId === userId &&
+            order.paymentMethod === "Payhere" &&
+            !order.payment &&
+            order.status === "Pending Payment"
+        ) {
+            await orderModel.findByIdAndUpdate(orderId, { status: "Cancelled" });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+}
+
 // Keeping your original placeOrderWithCard function for compatibility
 const placeOrderWithCard = async(req, res) => {
     // Redirect to createPendingOrder for PayHere processing
@@ -297,7 +324,9 @@ const placeOrderWithCard = async(req, res) => {
 // All Orders Data from Admin Panel
 const allOrders = async(req, res) => {
     try {
-        const orders = await orderModel.find({})
+        // Unpaid PayHere attempts are hidden unless explicitly requested
+        const filter = req.body?.includeUnpaid ? {} : REAL_ORDERS_FILTER;
+        const orders = await orderModel.find(filter)
         res.json({success: true, orders})
     } catch(error) {
         console.log(error)
@@ -309,7 +338,7 @@ const allOrders = async(req, res) => {
 const userOrders = async(req, res) => {
     try {
         const {userId} = req.body;
-        const orders = await orderModel.find({userId})
+        const orders = await orderModel.find({userId, ...REAL_ORDERS_FILTER})
         res.json({success: true, orders})
     } catch(error) {
         console.log(error)
@@ -360,5 +389,6 @@ export {
     payhereNotify,
     payhereSuccess,
     payhereFailure,
+    cancelPendingOrder,
     deleteOrder
 }

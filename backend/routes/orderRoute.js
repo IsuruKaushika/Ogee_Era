@@ -9,6 +9,7 @@ import {
   payhereNotify,
   payhereSuccess,
   payhereFailure,
+  cancelPendingOrder,
   deleteOrder
 } from '../controllers/orderController.js';
 import adminAuth from '../middleware/adminAuth.js';
@@ -29,6 +30,7 @@ orderRouter.post('/create-pending', authUser, createPendingOrder);
 orderRouter.post('/payhere-notify', payhereNotify); // No auth middleware since PayHere server needs access
 orderRouter.get('/payhere-success', payhereSuccess);
 orderRouter.get('/payhere-failure', payhereFailure);
+orderRouter.post('/cancel-pending', authUser, cancelPendingOrder);
 
   
 //User Feature

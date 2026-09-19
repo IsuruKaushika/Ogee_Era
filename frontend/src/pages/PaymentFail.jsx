@@ -1,12 +1,27 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 const PaymentFailed = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     toast.error("Payment failed or was cancelled.");
+
+    // Mark the unpaid attempt as Cancelled so it doesn't linger as pending
+    const orderId = searchParams.get('order_id');
+    const token = localStorage.getItem('token');
+    if (orderId && token) {
+      axios
+        .post(
+          import.meta.env.VITE_BACKEND_URL + '/api/order/cancel-pending',
+          { orderId },
+          { headers: { token } },
+        )
+        .catch(() => {});
+    }
 
     const timer = setTimeout(() => {
       navigate('/cart'); // or navigate('/') to go back to home

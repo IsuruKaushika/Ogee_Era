@@ -99,7 +99,7 @@ const PlaceOrder = () => {
       sandbox: sandbox, // Will be true in development, false in production
       merchant_id: merchantId,
       return_url: `${window.location.origin}/payment-success`,
-      cancel_url: `${window.location.origin}/payment-failed`,
+      cancel_url: `${window.location.origin}/payment-failed?order_id=${orderId}`,
       notify_url: `${backendUrl}/api/order/payhere-notify`,
       order_id: orderId,
       items: orderData.items.map((item) => `${item.name} (${item.size})`).join(", "),
