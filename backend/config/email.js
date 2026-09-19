@@ -48,12 +48,14 @@ Phone: ${address.phone}
   const mailOptions = {
     from: `"Ogeeera.lk" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
     to,
+    // Copy every order to the shop owner so new orders are noticed
+    bcc: process.env.ORDER_NOTIFY_EMAIL || process.env.SMTP_USER || undefined,
     subject: `Order Confirmation - #${orderId}`,
     html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
     <div style="background-color: #ffffff; padding: 20px; border-radius: 8px;">
       <div style="text-align: center; margin-bottom: 20px;">
-      <img src="${process.env.LOGO_URL || 'https://www.ogeeera.lk/assets/logo-BeuFy7XO.png'}" alt="Ogeeera.lk" style="max-width: 150px; height: auto;" />
+      <img src="${process.env.LOGO_URL || 'https://www.ogeeera.lk/logo.png'}" alt="Ogeeera.lk" style="max-width: 150px; height: auto;" />
       </div>
       
       <h2 style="color: #333; text-align: center;">Thank you for your order!</h2>

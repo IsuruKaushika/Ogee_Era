@@ -46,6 +46,19 @@ const organizationSchema = {
       name: "OgeeEra",
       url: SITE_URL,
       logo: `${SITE_URL}/logo.png`,
+      telephone: "+94712205395",
+      sameAs: [
+        "https://www.facebook.com/share/1BZtCgfBgd/",
+        "https://www.instagram.com/ogee_era",
+        "https://www.tiktok.com/@0gee_era",
+      ],
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: "+94712205395",
+        contactType: "customer service",
+        areaServed: "LK",
+        availableLanguage: ["en", "si", "ta"],
+      },
       areaServed: { "@type": "Country", name: "Sri Lanka" },
     },
     {
