@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import RelatedProducts from "../components/RelatedProducts";
 import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
 import { FiHeart } from "react-icons/fi";
+import Seo, { SITE_URL } from "../components/Seo";
 
 const Product = () => {
   const { productId } = useParams();
@@ -83,8 +84,45 @@ const Product = () => {
     );
   }
 
+  const buildProductSchema = () => {
+    const finalPrice = productData.discount
+      ? productData.price - (productData.price * productData.discount) / 100
+      : productData.price;
+    const availability =
+      productData.stockStatus === "Out of Stock"
+        ? "https://schema.org/OutOfStock"
+        : productData.stockStatus === "Limited Stock"
+          ? "https://schema.org/LimitedAvailability"
+          : "https://schema.org/InStock";
+    return {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: productData.name,
+      description: productData.description,
+      image: productData.image,
+      category: `${productData.category} / ${productData.subCategory}`,
+      brand: { "@type": "Brand", name: "OgeeEra" },
+      offers: {
+        "@type": "Offer",
+        url: `${SITE_URL}/product/${productData._id}`,
+        priceCurrency: "LKR",
+        price: Number(finalPrice).toFixed(2),
+        availability,
+        itemCondition: "https://schema.org/NewCondition",
+      },
+    };
+  };
+
   return productData ? (
     <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
+      <Seo
+        title={productData.name}
+        description={String(productData.description || "").replace(/\s+/g, " ").slice(0, 155)}
+        path={`/product/${productData._id}`}
+        image={productData.image?.[0]}
+        type="product"
+        jsonLd={buildProductSchema()}
+      />
       {/*product details*/}
       <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
         {/*product Images*/}
@@ -96,12 +134,12 @@ const Product = () => {
                 key={index}
                 className="w-[24%] sm:w-full flex-shrink-0 cursor-pointer"
                 src={item}
-                alt=""
+                alt={`${productData.name} view ${index + 1}`}
               />
             ))}
           </div>
           <div className="w-full sm:w-[80%]">
-            <img className="w-full h-auto" src={image} alt="" />
+            <img className="w-full h-auto" src={image} alt={productData.name} />
           </div>
         </div>
 

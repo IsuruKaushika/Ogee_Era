@@ -24,11 +24,13 @@ import Account from "./pages/Account";
 import { ToastContainer, toast } from "react-toastify"; //used for notifications
 import "react-toastify/dist/ReactToastify.css";
 import Policy from "./pages/Policy";
+import RouteSeo from "./components/RouteSeo";
 
 const App = () => {
   return (
     <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] max-w-[1920px] mx-auto ">
       <ToastContainer />
+      <RouteSeo />
       <ScrollToTop />
       <Navbar />
       <div className="mt-[72px] md:mt-[96px]">
