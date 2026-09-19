@@ -48,8 +48,6 @@ Phone: ${address.phone}
   const mailOptions = {
     from: `"Ogeeera.lk" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
     to,
-    // Copy every order to the shop owner so new orders are noticed
-    bcc: process.env.ORDER_NOTIFY_EMAIL || process.env.SMTP_USER || undefined,
     subject: `Order Confirmation - #${orderId}`,
     html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -85,4 +83,34 @@ Phone: ${address.phone}
   };
 
   await transporter.sendMail(mailOptions);
+
+  // Separate "new order" alert for the shop owner. A bcc to the sending account
+  // is de-duplicated by Gmail and never reaches the Inbox, so send a distinct message.
+  const ownerEmail = process.env.ORDER_NOTIFY_EMAIL || process.env.SMTP_USER;
+  if (ownerEmail) {
+    try {
+      const total = Number(amount).toFixed(2);
+      await transporter.sendMail({
+        from: mailOptions.from,
+        to: ownerEmail,
+        replyTo: to,
+        subject: `New Order #${orderId} - Rs ${total} (${paymentMethod})`,
+        html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">New order received</h2>
+          <p><b>Order:</b> #${orderId}<br/>
+          <b>Payment:</b> ${paymentMethod}<br/>
+          <b>Total:</b> Rs ${total}<br/>
+          <b>Customer email:</b> ${to}</p>
+          <h3>Items</h3>
+          ${itemsHtml}
+          <h3>Deliver to</h3>
+          <pre style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">${addressText}</pre>
+        </div>
+      `,
+      });
+    } catch (ownerErr) {
+      console.error("Failed to send owner order notification:", ownerErr.message);
+    }
+  }
 };

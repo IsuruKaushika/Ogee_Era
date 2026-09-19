@@ -12,6 +12,17 @@ const PAYHERE_MERCHANT_ID = process.env.PAYHERE_MERCHANT_ID;
 const PAYHERE_MERCHANT_SECRET = process.env.PAYHERE_MERCHANT_SECRET;
 const PAYHERE_SANDBOX = process.env.PAYHERE_SANDBOX === "true";
 
+// Confirmation goes to the logged-in account's email; falls back to the checkout form email
+const getCustomerEmail = async (userId, address) => {
+  try {
+    const user = await userModel.findById(userId).select("email");
+    if (user?.email) return user.email;
+  } catch (err) {
+    console.error("Could not look up user email:", err.message);
+  }
+  return address?.email;
+};
+
 const placeOrder = async (req, res) => {
   try {
     const { userId, items, amount, address } = req.body;
@@ -29,10 +40,11 @@ const placeOrder = async (req, res) => {
     const newOrder = new orderModel(orderData);
     await newOrder.save();
     // Send order confirmation email
-    if (newOrder.paymentMethod === "COD" && newOrder.address?.email) {
+    const customerEmail = await getCustomerEmail(userId, newOrder.address);
+    if (newOrder.paymentMethod === "COD" && customerEmail) {
       try {
         await sendOrderConfirmationEmail({
-          to: newOrder.address.email,
+          to: customerEmail,
           orderId: newOrder._id,
           items: newOrder.items,
           amount: newOrder.amount,
@@ -202,10 +214,11 @@ const payhereNotify = async (req, res) => {
       await userModel.findByIdAndUpdate(order.userId, { cartData: {} });
 
       // Send order confirmation email
-      if (order.address?.email) {
+      const customerEmail = await getCustomerEmail(order.userId, order.address);
+      if (customerEmail) {
         try {
           await sendOrderConfirmationEmail({
-            to: order.address.email,
+            to: customerEmail,
             orderId: order._id,
             items: order.items,
             amount: order.amount,
