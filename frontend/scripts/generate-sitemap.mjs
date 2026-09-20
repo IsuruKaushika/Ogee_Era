@@ -23,6 +23,7 @@ const staticPages = [
   ["/collection", "daily", "0.9"],
   ["/about", "monthly", "0.6"],
   ["/contact", "monthly", "0.6"],
+  ["/faq", "monthly", "0.7"],
   ["/terms-and-conditions", "yearly", "0.4"],
   ["/privacy-and-policy", "yearly", "0.4"],
   ["/return-policy", "yearly", "0.4"],

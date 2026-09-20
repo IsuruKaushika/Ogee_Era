@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { FAQ_GROUPS, buildFaqSchema } from "../src/data/faqs.js";
 
 const SITE_URL = "https://www.ogeeera.lk";
 const SITE_NAME = "OgeeEra";
@@ -30,6 +31,11 @@ const PAGES = {
   "/contact": {
     title: "Contact Us",
     description: "Get in touch with OgeeEra for order help, sizing questions and support in Sri Lanka.",
+  },
+  "/faq": {
+    title: "FAQ - Delivery, Payment & Returns",
+    description:
+      "Answers to common questions about ordering, payment, delivery and returns at OgeeEra, a Sri Lankan online fashion store.",
   },
   "/terms-and-conditions": {
     title: "Terms & Conditions",
@@ -131,7 +137,7 @@ try {
   if (!fs.existsSync(templatePath)) throw new Error("dist/index.html not found (run vite build first)");
   const template = fs.readFileSync(templatePath, "utf8");
   const nav =
-    `<nav><a href="/">Home</a> <a href="/collection">Collection</a> <a href="/about">About</a> ` +
+    `<nav><a href="/">Home</a> <a href="/collection">Collection</a> <a href="/about">About</a> <a href="/faq">FAQ</a>` +
     `<a href="/contact">Contact</a> <a href="/return-policy">Return policy</a></nav>`;
 
   let count = 0;
@@ -145,8 +151,14 @@ try {
         urlPath,
         image: `${SITE_URL}/logo.png`,
         type: "website",
-        schemas: urlPath === "/" ? [organizationSchema] : [],
-        body: `${nav}<h1>${esc(heading)}</h1><p>${esc(page.description)}</p>`,
+        schemas: urlPath === "/" ? [organizationSchema] : urlPath === "/faq" ? [buildFaqSchema()] : [],
+        body:
+          `${nav}<h1>${esc(heading)}</h1><p>${esc(page.description)}</p>` +
+          (urlPath === "/faq"
+            ? FAQ_GROUPS.flatMap((g) => g.items)
+                .map((i) => `<h2>${esc(i.q)}</h2><p>${esc(i.a)}</p>`)
+                .join("")
+            : ""),
       }),
     );
     count++;

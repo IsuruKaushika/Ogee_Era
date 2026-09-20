@@ -25,6 +25,7 @@ import { ToastContainer, toast } from "react-toastify"; //used for notifications
 import "react-toastify/dist/ReactToastify.css";
 import Policy from "./pages/Policy";
 import RouteSeo from "./components/RouteSeo";
+import Faq from "./pages/Faq";
 
 const App = () => {
   return (
@@ -40,6 +41,7 @@ const App = () => {
           <Route path="/collection" element={<Collection />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<Faq />} />
           <Route path="/product/:productId" element={<Product />} />
           <Route path="/login" element={<Login />} />
           <Route path="/place-order" element={<PlaceOrder />} />

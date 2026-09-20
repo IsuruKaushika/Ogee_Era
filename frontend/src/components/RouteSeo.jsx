@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import Seo, { SITE_URL } from "./Seo";
+import { buildFaqSchema } from "../data/faqs";
 
 const PRIVATE = ["/login", "/cart", "/place-order", "/wishlist", "/account", "/orders", "/payment-success", "/payment-failed"];
 
@@ -22,6 +23,11 @@ const PAGES = {
   "/contact": {
     title: "Contact Us",
     description: "Get in touch with OgeeEra for order help, sizing questions and support in Sri Lanka.",
+  },
+  "/faq": {
+    title: "FAQ - Delivery, Payment & Returns",
+    description:
+      "Answers to common questions about ordering, payment, delivery and returns at OgeeEra, a Sri Lankan online fashion store.",
   },
   "/terms-and-conditions": {
     title: "Terms & Conditions",
@@ -89,7 +95,7 @@ const RouteSeo = () => {
       title={page.title}
       description={page.description}
       path={path}
-      jsonLd={path === "/" ? organizationSchema : undefined}
+      jsonLd={path === "/" ? organizationSchema : path === "/faq" ? buildFaqSchema() : undefined}
     />
   );
 };

@@ -3,6 +3,7 @@ import Title from '../components/Title'
 import { assets } from '../assets/assets'
 import NewsLetterBox from '../components/NewsLetterBox'
 import emailjs from '@emailjs/browser'
+import { ALL_FAQS } from '../data/faqs'
 
 const Contact = () => {
   const form = useRef();
@@ -243,30 +244,18 @@ const Contact = () => {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-semibold text-center mb-8">Frequently Asked Questions</h2>
           <div className="grid gap-4">
-            {[
-              {
-                question: "What are your shipping options?",
-                answer: "We offer standard shipping (3-5 business days), express shipping (1-2 business days), and international shipping options. Shipping costs vary based on location and selected shipping method."
-              },
-              {
-                question: "How can I track my order?",
-                answer: "Once your order is shipped, you will receive a confirmation email with tracking information. You can use this tracking number to monitor your shipment's progress."
-              },
-              {
-                question: "What is your return policy?",
-                answer: "We accept returns within 30 days of purchase. Items must be in original condition with tags attached. Please contact our customer service team to initiate a return."
-              },
-              {
-                question: "Do you offer international shipping?",
-                answer: "Yes, we ship to most countries worldwide. International shipping rates and delivery times vary by location."
-              }
-            ].map((faq, index) => (
-              <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                <h3 className="font-medium text-lg mb-2">{faq.question}</h3>
-                <p className="text-gray-600">{faq.answer}</p>
+            {ALL_FAQS.filter((f) =>
+              ["What payment methods do you accept?", "How much is delivery?", "How can I track my order?", "What is your return policy?"].includes(f.q)
+            ).map((faq) => (
+              <div key={faq.q} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <h3 className="font-medium text-lg mb-2">{faq.q}</h3>
+                <p className="text-gray-600">{faq.a}</p>
               </div>
             ))}
           </div>
+          <p className="text-center mt-6 text-sm">
+            <a href="/faq" className="underline">See all questions</a>
+          </p>
         </div>
       </div>
       
