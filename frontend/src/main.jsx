@@ -6,6 +6,9 @@ import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import ShopContextProvider from "./context/ShopContext.jsx";
 
+// Drop tags written by scripts/prerender.mjs; Helmet re-adds the live ones.
+document.querySelectorAll("[data-prerender]").forEach((el) => el.remove());
+
 createRoot(document.getElementById("root")).render(
   <HelmetProvider>
   <BrowserRouter>
