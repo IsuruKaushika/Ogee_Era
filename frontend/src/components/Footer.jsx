@@ -125,6 +125,7 @@ const Footer = () => {
                 <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
               </svg>
             </a>
+
             {/* TikTok Icon */}
             <a
               href="https://www.tiktok.com/@0gee_era?_t=ZS-8vqiO4zOGkK&_r=1"
