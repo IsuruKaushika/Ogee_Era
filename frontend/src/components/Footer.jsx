@@ -52,10 +52,7 @@ const Footer = () => {
               </a>
             </li>
             <li>
-              <a
-                href="/faq"
-                className="hover:text-gray-900 transition-colors"
-              >
+              <a href="/faq" className="hover:text-gray-900 transition-colors">
                 FAQ
               </a>
             </li>
@@ -165,7 +162,7 @@ const Footer = () => {
           <div className="flex flex-col items-center gap-1">
             <span className="text-xs text-gray-600">Powered by</span>
             <a
-              href="https://mail.google.com/mail/?view=cm&fs=1&to=kausuru23@gmail.com"
+              href="https://www.cigmalabs.com/"
               target="_blank"
               rel="noopener noreferrer"
             >
