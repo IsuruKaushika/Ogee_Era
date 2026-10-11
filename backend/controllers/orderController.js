@@ -361,8 +361,13 @@ const updateStatus = async(req, res) => {
 // Delete order from admin
 const deleteOrder = async(req, res) => {
     try {
-        const {orderId} = req.body;
+        const {orderId, orderIds} = req.body;
         
+        if (orderIds && Array.isArray(orderIds)) {
+            await orderModel.deleteMany({ _id: { $in: orderIds } });
+            return res.json({ success: true, message: "Orders deleted successfully" });
+        }
+
         // Check if order exists
         const order = await orderModel.findById(orderId);
         if (!order) {
