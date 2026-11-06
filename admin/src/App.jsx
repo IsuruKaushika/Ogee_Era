@@ -14,6 +14,7 @@ import Edit from "./pages/Edit";
 import Home from "./pages/Home";
 import Customers from "./pages/Customers";
 import Transactions from "./pages/Transactions";
+import Reviews from "./pages/Reviews";
 
 import Login from "./components/Login";
 import { useState } from "react";
@@ -68,6 +69,7 @@ const App = () => {
                   path="/customers"
                   element={<Customers token={token} />}
                 />
+                <Route path="/reviews" element={<Reviews token={token} />} />
                 <Route path="/edit/:id" element={<Edit token={token} />} />
               </Routes>
             </div>

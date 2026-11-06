@@ -1,550 +1,208 @@
-import React, { useContext, useState } from "react";
-import Title from "../components/Title";
-import CartTotal from "../components/CartTotal";
+import { useContext, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
-import { validatePlaceOrderForm } from "../utils/validatePlaceOrderForm";
+import { validatePlaceOrderForm, normalizePhone } from "../utils/validatePlaceOrderForm";
 import PlaceOrderSkeleton from "../components/PlaceOrderSkeleton";
+import CartTotal from "../components/CartTotal";
+import { SRI_LANKA_DISTRICTS } from "../config/site";
+import { formatPrice, finalPrice } from "../utils/format";
+import { trackPurchase } from "../utils/analytics";
+
+const thumb = (u) => u?.replace("/upload/", "/upload/f_auto,q_auto,w_120,c_limit/");
+
+const Field = ({ label, error, children }) => (
+  <label className="block">
+    <span className="block text-xs text-ink/70 mb-1">{label}</span>
+    {children}
+    {error && <span className="block text-xs text-red-700 mt-1">{error}</span>}
+  </label>
+);
 
 const PlaceOrder = () => {
+  const { navigate, backendUrl, token, cartItems, setCartItems, products, isProductsLoading, getCartTotal } = useContext(ShopContext);
   const [method, setMethod] = useState("cod");
-  const {
-    navigate,
-    backendUrl,
-    token,
-    cartItems,
-    setCartItems,
-    currency,
-    getCartAmount,
-    getCartDiscount,
-    delivery_fee,
-    products,
-    isProductsLoading,
-  } = useContext(ShopContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    street: "",
-    city: "",
-    state: "",
-    zipcode: "",
-    country: "",
-    phone: "",
+    firstName: "", lastName: "", email: "", phone: "", street: "", city: "", state: "", zipcode: "", country: "Sri Lanka",
   });
 
-  const [errors, setErrors] = useState({});
-
-  const orderItems = [];
-  for (const productId in cartItems) {
-    for (const size in cartItems[productId]) {
-      if (cartItems[productId][size] > 0) {
-        const itemInfo = structuredClone(products.find((product) => product._id === productId));
-        if (itemInfo) {
-          itemInfo.size = size;
-          itemInfo.quantity = cartItems[productId][size];
-          orderItems.push(itemInfo);
-        }
+  const orderItems = useMemo(() => {
+    const out = [];
+    for (const id in cartItems) {
+      const product = products.find((p) => p._id === id);
+      if (!product) continue;
+      for (const size in cartItems[id]) {
+        if (cartItems[id][size] > 0) out.push({ ...product, size, quantity: cartItems[id][size] });
       }
     }
-  }
+    return out;
+  }, [cartItems, products]);
 
-  const cartSubtotal = Number(getCartAmount()) || 0;
-  const cartDiscount = Number(getCartDiscount()) || 0;
-  const hasOrderItems = orderItems.length > 0 && cartSubtotal > 0;
+  if (isProductsLoading) return <PlaceOrderSkeleton />;
 
-  if (isProductsLoading) {
-    return <PlaceOrderSkeleton />;
-  }
-
-  if (!hasOrderItems) {
+  if (orderItems.length === 0) {
     return (
-      <div className="border-t pt-14 min-h-[60vh] flex flex-col items-center justify-center px-4 text-center">
-        <div className="text-2xl mb-3">
-          <Title text1={"YOUR"} text2={"CART"} />
-        </div>
-        <p className="text-gray-600 mb-6">
-          Your cart is currently empty. Add items before placing an order.
-        </p>
-        <div className="flex gap-3">
-          <button
-            onClick={() => navigate("/cart")}
-            className="bg-gray-100 text-gray-800 px-6 py-3 text-sm rounded"
-          >
-            VIEW CART
-          </button>
-          <button
-            onClick={() => navigate("/collection")}
-            className="bg-black text-white px-6 py-3 text-sm rounded"
-          >
-            SHOP NOW
-          </button>
-        </div>
+      <div className="py-24 text-center">
+        <h1 className="text-4xl">Your cart is empty</h1>
+        <Link to="/collection" className="btn-dark mt-8">Shop now</Link>
       </div>
     );
   }
 
-  const onChangeHandler = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
+  const set = (e) => setFormData((d) => ({ ...d, [e.target.name]: e.target.value }));
+  const cls = (name) => `field ${errors[name] ? "!border-red-500" : ""}`;
 
-    setFormData((data) => ({ ...data, [name]: value }));
-  };
-
-  const initiatePayherePayment = (orderData, orderId, merchantId, sandbox, hash) => {
-    const paymentObject = {
-      sandbox: sandbox, // Will be true in development, false in production
-      merchant_id: merchantId,
+  const startPayHere = (orderId, res) => {
+    const f = document.createElement("form");
+    f.method = "POST";
+    f.action = res.sandbox ? "https://sandbox.payhere.lk/pay/checkout" : "https://www.payhere.lk/pay/checkout";
+    const fields = {
+      merchant_id: res.merchantId,
       return_url: `${window.location.origin}/payment-success`,
       cancel_url: `${window.location.origin}/payment-failed?order_id=${orderId}`,
       notify_url: `${backendUrl}/api/order/payhere-notify`,
       order_id: orderId,
-      items: orderData.items.map((item) => `${item.name} (${item.size})`).join(", "),
-      amount: orderData.amount,
-      currency: "LKR", // Replace with your currency if different
-      first_name: orderData.address.firstName,
-      last_name: orderData.address.lastName,
-      email: orderData.address.email,
-      phone: orderData.address.phone,
-      address: orderData.address.street,
-      city: orderData.address.city,
-      country: orderData.address.country,
-      hash: hash, // Hash generated on the backend
+      items: orderItems.map((i) => `${i.name} (${i.size})`).join(", ").slice(0, 250),
+      amount: Number(res.amount).toFixed(2), // server-calculated; must match the hash
+      currency: "LKR",
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      email: formData.email,
+      phone: normalizePhone(formData.phone),
+      address: formData.street,
+      city: formData.city,
+      country: "Sri Lanka",
+      hash: res.hash,
     };
-
-    // Create a form and submit it to PayHere
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = sandbox
-      ? "https://sandbox.payhere.lk/pay/checkout"
-      : "https://www.payhere.lk/pay/checkout";
-
-    // Create and append input fields for each parameter
-    Object.entries(paymentObject).forEach(([key, value]) => {
+    Object.entries(fields).forEach(([k, v]) => {
       const input = document.createElement("input");
       input.type = "hidden";
-      input.name = key;
-      input.value = value;
-      form.appendChild(input);
+      input.name = k;
+      input.value = v;
+      f.appendChild(input);
     });
-
-    document.body.appendChild(form);
-    form.submit();
+    document.body.appendChild(f);
+    f.submit();
   };
 
-  // Function to add order to Google Sheets
-  const addOrderToGoogleSheet = async (orderData, orderId, status) => {
-    try {
-      // Format items for Google Sheets
-      const itemsFormatted = orderData.items
-        .map((item) => `${item.name} (${item.size}) x ${item.quantity}`)
-        .join("; ");
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
 
-      // Format address for Google Sheets
-      const fullAddress = `${orderData.address.street}, ${orderData.address.city}, ${orderData.address.state}, ${orderData.address.zipcode}, ${orderData.address.country}`;
-
-      // Create data object for Google Sheets
-      const sheetData = {
-        orderId: orderId,
-        orderStatus: status,
-        customerName: `${orderData.address.firstName} ${orderData.address.lastName}`,
-        email: orderData.address.email,
-        address: fullAddress,
-        items: itemsFormatted,
-        phoneNumber: orderData.address.phone,
-        paymentMethod: orderData.payment_method,
-        amount: orderData.amount,
-        orderedDate: new Date().toISOString(),
-      };
-
-      // Google Apps Script web app URL - Replace with your deployed web app URL
-      const googleSheetsUrl =
-        "https://script.google.com/macros/s/AKfycby7DDOdCEGRVUtOPGaULYkqRmFIM-3GJaQYA2Esufme4KOPn0aCTlmFwX18iu5T_vGtIQ/exec";
-
-      // Send data to Google Sheets
-      const response = await axios.post(googleSheetsUrl, sheetData);
-
-      // Log success but don't block the main flow
-      console.log("Order added to Google Sheet:", response.data);
-    } catch (error) {
-      // Log error but don't block the main flow
-      console.error("Failed to add order to Google Sheet:", error);
-      // We don't want to show an error toast here as it would confuse the user
-      // The order has been processed in the system, this is just a logging issue
-    }
-  };
-
-  const onSubmitHandler = async (event) => {
-    event.preventDefault();
-
-    if (isSubmitting) {
-      return; // Prevent multiple submissions
-    }
-
-    if (!hasOrderItems) {
-      toast.error("Your cart is empty. Add products before checkout.");
-      navigate("/cart");
-      return;
-    }
-
-    const { isValid, errors: validationErrors } = await validatePlaceOrderForm(formData);
-
+    const { isValid, errors: v } = await validatePlaceOrderForm(formData);
     if (!isValid) {
-      setErrors(validationErrors);
-      toast.error("Please fix the highlighted fields.");
+      setErrors(v);
+      toast.error("Please check the highlighted fields.");
       return;
     }
-
     setErrors({});
     setIsSubmitting(true);
 
+    // Only ids, sizes and quantities are sent. The server looks up prices and calculates the total.
+    const payload = {
+      address: { ...formData, phone: normalizePhone(formData.phone), country: "Sri Lanka" },
+      items: orderItems.map((i) => ({ _id: i._id, size: i.size, quantity: i.quantity })),
+    };
+    const headers = token ? { token } : {};
+    const summary = { value: getCartTotal(), items: orderItems };
+
     try {
-      let orderData = {
-        userId: localStorage.getItem("userId"), // Assuming you store userId in localStorage
-        address: formData,
-        items: orderItems,
-        amount: cartSubtotal - cartDiscount + delivery_fee,
-        payment_method: method,
-      };
-
-      switch (method) {
-        // API calls COD
-        case "cod":
-          const response = await axios.post(backendUrl + "/api/order/place", orderData, {
-            headers: { token },
+      if (method === "cod") {
+        const { data } = await axios.post(`${backendUrl}/api/order/place`, payload, { headers });
+        if (data.success) {
+          trackPurchase({ orderId: data.orderId, value: data.amount, method: "COD", items: summary.items });
+          setCartItems({});
+          navigate("/order-confirmed", {
+            state: { orderId: data.orderId, amount: data.amount, email: formData.email, name: formData.firstName, method: "Cash on Delivery" },
           });
-
-          if (response.data.success) {
-            // Add order to Google Sheet
-            await addOrderToGoogleSheet(orderData, response.data.orderId, "Placed");
-
-            toast.success(response.data.message);
-            setCartItems({});
-            navigate("/orders");
-          } else {
-            toast.error(response.data.message);
-          }
-          break;
-
-        case "payhere":
-          // First create an order with 'pending' status
-          const payhereResponse = await axios.post(
-            backendUrl + "/api/order/create-pending",
-            orderData,
-            { headers: { token } },
-          );
-
-          if (payhereResponse.data.success) {
-            // Add order to Google Sheet with pending status
-            await addOrderToGoogleSheet(orderData, payhereResponse.data.orderId, "Pending Payment");
-
-            // Initiate PayHere payment with the order ID, merchant ID, and hash received from backend
-            initiatePayherePayment(
-              orderData,
-              payhereResponse.data.orderId,
-              payhereResponse.data.merchantId,
-              payhereResponse.data.sandbox,
-              payhereResponse.data.hash, // Pass the hash from backend
-            );
-          } else {
-            toast.error(payhereResponse.data.message || "Failed to create order");
-          }
-          break;
-
-        default:
-          break;
+        } else toast.error(data.message);
+      } else {
+        const { data } = await axios.post(`${backendUrl}/api/order/create-pending`, payload, { headers });
+        if (data.success) {
+          sessionStorage.setItem("lastPayHereOrder", JSON.stringify({ orderId: data.orderId, value: data.amount, items: summary.items.map((i) => ({ _id: i._id, name: i.name, price: finalPrice(i), quantity: i.quantity, size: i.size })) }));
+          startPayHere(data.orderId, data);
+        } else toast.error(data.message || "Could not start payment");
       }
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.log(err);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const Option = ({ id, title, text }) => (
+    <button type="button" onClick={() => setMethod(id)} className={`w-full text-left border p-4 flex items-start gap-3 ${method === id ? "border-ink bg-white" : "border-stone"}`} aria-pressed={method === id}>
+      <span className={`mt-1 w-4 h-4 rounded-full border ${method === id ? "border-ink bg-ink ring-2 ring-white ring-inset" : "border-stone"}`} />
+      <span>
+        <span className="block text-sm font-medium">{title}</span>
+        <span className="block text-xs text-ink/65 mt-0.5">{text}</span>
+      </span>
+    </button>
+  );
+
   return (
-    <form
-      onSubmit={onSubmitHandler}
-      className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-8 min-h-[80vh] px-4"
-    >
-      {/* ---------- Left Side (Delivery Information) ---------- */}
-      <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
-        <div className="text-xl sm:text-2xl my-3">
-          <Title text1={"DELIVERY"} text2={"INFORMATION"} />
-        </div>
+    <form onSubmit={onSubmit} className="py-8 md:py-12" noValidate>
+      <h1 className="text-4xl md:text-5xl mb-2">Checkout</h1>
+      <p className="text-sm text-ink/70 mb-8">
+        Checking out as a guest. {!token && <>Have an account? <Link to="/login" className="underline">Log in</Link>.</>}
+      </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <input
-              required
-              onChange={onChangeHandler}
-              name="firstName"
-              value={formData.firstName}
-              className={`border p-2 rounded w-full ${errors.firstName ? "border-red-500" : ""}`}
-              type="text"
-              placeholder="First name"
-            />
-            {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
-          </div>
-          <div>
-            <input
-              required
-              onChange={onChangeHandler}
-              name="lastName"
-              value={formData.lastName}
-              className={`border p-2 rounded w-full ${errors.lastName ? "border-red-500" : ""}`}
-              type="text"
-              placeholder="Last name"
-            />
-            {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
-          </div>
-        </div>
-        <div>
-          <input
-            required
-            onChange={onChangeHandler}
-            name="email"
-            value={formData.email}
-            className={`border p-2 rounded w-full ${errors.email ? "border-red-500" : ""}`}
-            type="email"
-            placeholder="Email address"
-          />
-          {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
-        </div>
-        <div>
-          <input
-            required
-            onChange={onChangeHandler}
-            name="street"
-            value={formData.street}
-            className={`border p-2 rounded w-full ${errors.street ? "border-red-500" : ""}`}
-            type="text"
-            placeholder="Street"
-          />
-          {errors.street && <p className="text-red-500 text-xs">{errors.street}</p>}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <input
-              required
-              onChange={onChangeHandler}
-              name="city"
-              value={formData.city}
-              className={`border p-2 rounded w-full ${errors.city ? "border-red-500" : ""}`}
-              type="text"
-              placeholder="City"
-            />
-            {errors.city && <p className="text-red-500 text-xs">{errors.city}</p>}
-          </div>
-          <div>
-            <input
-              required
-              onChange={onChangeHandler}
-              name="state"
-              value={formData.state}
-              className={`border p-2 rounded w-full ${errors.state ? "border-red-500" : ""}`}
-              type="text"
-              placeholder="State"
-            />
-            {errors.state && <p className="text-red-500 text-xs">{errors.state}</p>}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <input
-              required
-              onChange={onChangeHandler}
-              name="zipcode"
-              value={formData.zipcode}
-              className={`border p-2 rounded w-full ${errors.zipcode ? "border-red-500" : ""}`}
-              type="text"
-              placeholder="Zipcode"
-            />
-            {errors.zipcode && <p className="text-red-500 text-xs">{errors.zipcode}</p>}
-          </div>
-          <div>
-            <input
-              required
-              onChange={onChangeHandler}
-              name="country"
-              value={formData.country}
-              className={`border p-2 rounded w-full ${errors.country ? "border-red-500" : ""}`}
-              type="text"
-              placeholder="Country"
-            />
-            {errors.country && <p className="text-red-500 text-xs">{errors.country}</p>}
-          </div>
-        </div>
-        <div>
-          <input
-            required
-            onChange={onChangeHandler}
-            name="phone"
-            value={formData.phone}
-            className={`border p-2 rounded w-full ${errors.phone ? "border-red-500" : ""}`}
-            type="tel"
-            placeholder="Phone"
-          />
-          {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
-        </div>
-
-        <div className=" hidden md:block">
-          <Title text1={"PAYMENT"} text2={"METHOD"} />
-          {/*----Payment Method----*/}
-          <div className="flex gap-3 flex-col lg:flex-row mt-2">
-            {/* PayHere Payment */}
-            <div
-              onClick={() => setMethod("payhere")}
-              className={`flex items-center gap-3 border p-2 px-3 cursor-pointer w-full ${
-                method === "payhere" ? "border-green-500" : "border-gray-300"
-              }`}
-            >
-              <p
-                className={`w-3.5 h-3.5 border rounded-full ${
-                  method === "payhere" ? "bg-green-400" : "bg-gray-300"
-                }`}
-              ></p>
-              <p className="text-blue-600 text-sm font-medium mx-4">CARD PAYMENT</p>
+      <div className="grid lg:grid-cols-[1fr_400px] gap-10 lg:gap-14">
+        <div className="space-y-8">
+          <section>
+            <h2 className="text-2xl mb-4">Delivery details</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="First name" error={errors.firstName}><input className={cls("firstName")} name="firstName" value={formData.firstName} onChange={set} autoComplete="given-name" /></Field>
+              <Field label="Last name" error={errors.lastName}><input className={cls("lastName")} name="lastName" value={formData.lastName} onChange={set} autoComplete="family-name" /></Field>
+              <Field label="Mobile number (for delivery)" error={errors.phone}><input className={cls("phone")} name="phone" value={formData.phone} onChange={set} inputMode="tel" autoComplete="tel" placeholder="071 220 5395" /></Field>
+              <Field label="Email (for order confirmation)" error={errors.email}><input className={cls("email")} type="email" name="email" value={formData.email} onChange={set} autoComplete="email" /></Field>
+              <div className="sm:col-span-2">
+                <Field label="Address" error={errors.street}><input className={cls("street")} name="street" value={formData.street} onChange={set} autoComplete="street-address" placeholder="House no, street, area" /></Field>
+              </div>
+              <Field label="City / Town" error={errors.city}><input className={cls("city")} name="city" value={formData.city} onChange={set} autoComplete="address-level2" /></Field>
+              <Field label="District" error={errors.state}>
+                <select className={cls("state")} name="state" value={formData.state} onChange={set}>
+                  <option value="">Select district</option>
+                  {SRI_LANKA_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </Field>
+              <Field label="Postal code (optional)" error={errors.zipcode}><input className={cls("zipcode")} name="zipcode" value={formData.zipcode} onChange={set} inputMode="numeric" autoComplete="postal-code" /></Field>
+              <Field label="Country"><input className="field bg-sand/50" value="Sri Lanka" readOnly /></Field>
             </div>
+          </section>
 
-            {/* Cash on Delivery (COD) */}
-            <div
-              onClick={() => setMethod("cod")}
-              className={`flex items-center gap-3 border p-2 px-3 cursor-pointer w-full ${
-                method === "cod" ? "border-green-500" : "border-gray-300"
-              }`}
-            >
-              <p
-                className={`w-3.5 h-3.5 border rounded-full ${
-                  method === "cod" ? "bg-green-400" : "bg-gray-300"
-                }`}
-              ></p>
-              <p className="text-gray-500 text-sm font-medium mx-4">CASH ON DELIVERY</p>
+          <section>
+            <h2 className="text-2xl mb-4">Payment</h2>
+            <div className="space-y-3">
+              <Option id="cod" title="Cash on delivery" text="Pay in cash when your order arrives." />
+              <Option id="payhere" title="Pay online by card" text="Visa or Mastercard through PayHere, Sri Lanka's secure payment gateway." />
             </div>
-          </div>
-
-          {/* ---- Place Order Button ---- */}
-          <button
-            type="submit"
-            disabled={isSubmitting || !hasOrderItems}
-            className={`w-full mt-6 ${isSubmitting ? "bg-gray-500" : "bg-black hover:bg-gray-800"} text-white py-3 rounded-md text-lg font-medium transition disabled:cursor-not-allowed disabled:bg-gray-500`}
-          >
-            {isSubmitting ? "Processing..." : method === "payhere" ? "Pay Now" : "Place Order"}
-          </button>
+          </section>
         </div>
-      </div>
 
-      {/* ---------- Right Side (Cart Totals) ---------- */}
-
-      <div className="w-full sm:max-w-[480px]">
-        <div className="text-xl sm:text-2xl mt-3 mb-7">
-          <Title text1={"CART"} text2={"ITEMS"} />
-        </div>
-        <div className="bg-white">
-          <div className="max-h-[360px] space-y-4 overflow-y-auto pr-1">
-            {orderItems.map((item) => {
-              const itemPrice = Number(item.price || 0);
-              const discount = Number(item.discount || 0);
-              const discountedPrice = discount > 0 ? itemPrice * (1 - discount / 100) : itemPrice;
-              const lineTotal = discountedPrice * Number(item.quantity || 0);
-
-              return (
-                <div
-                  key={`${item._id}-${item.size}`}
-                  className="flex items-start gap-3 border-b border-gray-100 pb-4 last:border-b-0 last:pb-0"
-                >
-                  <img
-                    src={item.image?.[0]}
-                    alt={item.name}
-                    className="h-20 w-16 rounded object-cover"
-                  />
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-800 sm:text-base">
-                      {item.name}
-                    </p>
-                    <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500 sm:text-sm">
-                      <span className="rounded border border-gray-200 px-2 py-0.5">
-                        Size: {item.size}
-                      </span>
-                      <span>Qty: {item.quantity}</span>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2 text-sm">
-                      {discount > 0 && (
-                        <span className="text-gray-400 line-through">
-                          {currency}
-                          {itemPrice.toFixed(2)}
-                        </span>
-                      )}
-                      <span className="font-medium text-gray-800">
-                        {currency}
-                        {discountedPrice.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="text-right text-sm font-semibold text-gray-900">
-                    {currency}
-                    {lineTotal.toFixed(2)}
-                  </div>
+        <aside className="self-start bg-white border border-stone/60 p-6 lg:sticky lg:top-24">
+          <ul className="divide-y divide-stone/60 mb-5">
+            {orderItems.map((i) => (
+              <li key={`${i._id}-${i.size}`} className="py-3 flex gap-3 text-sm">
+                <img src={thumb(i.image[0])} alt="" className="w-14 aspect-[3/4] object-cover bg-sand" />
+                <div className="flex-1">
+                  <p className="leading-snug">{i.name}</p>
+                  <p className="text-xs text-ink/60">{i.size !== "default" && `Size ${i.size} · `}Qty {i.quantity}</p>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-8">
+                <p>{formatPrice(finalPrice(i) * i.quantity)}</p>
+              </li>
+            ))}
+          </ul>
           <CartTotal />
-        </div>
-
-        <div className="mt-4 md:hidden">
-          <Title text1={"PAYMENT"} text2={"METHOD"} />
-          {/*----Payment Method----*/}
-          <div className="flex gap-3 flex-col lg:flex-row">
-            {/* PayHere Payment */}
-            <div
-              onClick={() => setMethod("payhere")}
-              className={`flex items-center gap-3 border p-2 px-3 cursor-pointer ${
-                method === "payhere" ? "border-green-500" : "border-gray-300"
-              }`}
-            >
-              <p
-                className={`w-3.5 h-3.5 border rounded-full ${
-                  method === "payhere" ? "bg-green-400" : "bg-gray-300"
-                }`}
-              ></p>
-              <p className="text-blue-600 text-sm font-medium mx-4">CARD PAYMENT</p>
-            </div>
-
-            {/* Cash on Delivery (COD) */}
-            <div
-              onClick={() => setMethod("cod")}
-              className={`flex items-center gap-3 border p-2 px-3 cursor-pointer ${
-                method === "cod" ? "border-green-500" : "border-gray-300"
-              }`}
-            >
-              <p
-                className={`w-3.5 h-3.5 border rounded-full ${
-                  method === "cod" ? "bg-green-400" : "bg-gray-300"
-                }`}
-              ></p>
-              <p className="text-gray-500 text-sm font-medium mx-4">CASH ON DELIVERY</p>
-            </div>
-          </div>
-
-          {/* ---- Place Order Button ---- */}
-          <button
-            type="submit"
-            disabled={isSubmitting || !hasOrderItems}
-            className={`w-full mt-6 ${isSubmitting ? "bg-gray-500" : "bg-black hover:bg-gray-800"} text-white py-3 rounded-md text-lg font-medium transition disabled:cursor-not-allowed disabled:bg-gray-500`}
-          >
-            {isSubmitting ? "Processing..." : method === "payhere" ? "Pay Now" : "Place Order"}
+          <button type="submit" disabled={isSubmitting} className="btn-dark w-full mt-6">
+            {isSubmitting ? "Processing..." : method === "payhere" ? "Pay now" : "Place order"}
           </button>
-        </div>
+          <p className="mt-3 text-xs text-center text-ink/60">Returns &amp; exchanges within 7 days. Your details are only used to deliver your order.</p>
+        </aside>
       </div>
     </form>
   );

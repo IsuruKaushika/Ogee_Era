@@ -1,274 +1,218 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { FiHeart, FiTruck, FiRefreshCw } from "react-icons/fi";
 import { ShopContext } from "../context/ShopContext";
-import { useEffect } from "react";
 import RelatedProducts from "../components/RelatedProducts";
 import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
-import { FiHeart } from "react-icons/fi";
+import ProductReviews from "../components/ProductReviews";
 import Seo, { SITE_URL } from "../components/Seo";
+import { SITE, DELIVERY_FEE, FREE_DELIVERY_THRESHOLD, RETURN_DAYS } from "../config/site";
+import { formatPrice, finalPrice } from "../utils/format";
+import { trackViewItem } from "../utils/analytics";
+
+const big = (u) => u?.replace("/upload/", "/upload/f_auto,q_auto,w_1000,c_limit/");
+const thumb = (u) => u?.replace("/upload/", "/upload/f_auto,q_auto,w_200,c_limit/");
 
 const Product = () => {
   const { productId } = useParams();
-  const { products, currency, addToCart, isInWishlist, toggleWishlist, isProductsLoading } =
-    useContext(ShopContext);
-  const [productData, setProductData] = useState(false);
+  const { products, addToCart, isInWishlist, toggleWishlist, isProductsLoading, navigate } = useContext(ShopContext);
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");
   const [sizeError, setSizeError] = useState(false);
-  const [showSizeChart, setShowSizeChart] = useState(false);
+  const [showChart, setShowChart] = useState(false);
+  const [rating, setRating] = useState(null);
 
-  const fetchProductData = async () => {
-    products.map((item) => {
-      if (item._id === productId) {
-        setProductData(item);
-        setImage(item.image[0]);
-        // Reset size error when changing products
-        setSizeError(false);
-        // If no sizes available, set a default size
-        if (!item.sizes || item.sizes.length === 0) {
-          setSize("default");
-        } else {
-          setSize(""); // Reset size selection for products with size options
-        }
-        return null;
-      }
-    });
-  };
+  const productData = useMemo(() => products.find((p) => p._id === productId) || null, [products, productId]);
 
   useEffect(() => {
-    fetchProductData();
-  }, [productId, products]);
-
-  // Function to render stock status with appropriate styling
-  const renderStockStatus = () => {
-    if (!productData.stockStatus) return null;
-
-    const statusColor = {
-      "In Stock": "text-gray-600",
-      "Out of Stock": "text-gray-600",
-      "Limited Stock": "text-orange-500",
-    };
-
-    return (
-      <div className="mt-3">
-        <span className={`font-medium ${statusColor[productData.stockStatus]}`}>
-          {productData.stockStatus}
-        </span>
-      </div>
-    );
-  };
-
-  // Function to handle adding to cart
-  const handleAddToCart = () => {
-    // For products with sizes, require size selection
-    if (productData.sizes && productData.sizes.length > 0 && !size) {
-      setSizeError(true);
-      return;
-    }
-
-    // Clear any previous error
+    if (!productData) return;
+    setImage(productData.image[0]);
     setSizeError(false);
-
-    // Add to cart with either selected size or default value
-    const sizeToUse = productData.sizes && productData.sizes.length > 0 ? size : "default";
-    addToCart(productData._id, sizeToUse);
-  };
+    setSize(productData.sizes?.length ? "" : "default");
+    trackViewItem(productData, finalPrice(productData));
+  }, [productData?._id]);
 
   if (isProductsLoading && !productData) {
     return (
-      <div>
+      <div className="py-10">
         <ProductDetailsSkeleton />
-        <RelatedProducts />
+      </div>
+    );
+  }
+  if (!productData) {
+    return (
+      <div className="py-24 text-center">
+        <Seo title="Product not found" path={`/product/${productId}`} noindex />
+        <h1 className="text-4xl">This product is no longer available</h1>
+        <Link to="/collection" className="btn-dark mt-6">Continue shopping</Link>
       </div>
     );
   }
 
-  const buildProductSchema = () => {
-    const finalPrice = productData.discount
-      ? productData.price - (productData.price * productData.discount) / 100
-      : productData.price;
-    const availability =
-      productData.stockStatus === "Out of Stock"
-        ? "https://schema.org/OutOfStock"
-        : productData.stockStatus === "Limited Stock"
-          ? "https://schema.org/LimitedAvailability"
-          : "https://schema.org/InStock";
-    return {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: productData.name,
-      description: productData.description,
-      image: productData.image,
-      category: `${productData.category} / ${productData.subCategory}`,
-      brand: { "@type": "Brand", name: "OgeeEra" },
-      offers: {
-        "@type": "Offer",
-        url: `${SITE_URL}/product/${productData._id}`,
-        priceCurrency: "LKR",
-        price: Number(finalPrice).toFixed(2),
-        availability,
-        itemCondition: "https://schema.org/NewCondition",
+  const p = productData;
+  const hasSizes = p.sizes?.length > 0;
+  const soldOut = p.stockStatus === "Out of Stock";
+  const now = finalPrice(p);
+  const url = `${SITE_URL}/product/${p._id}`;
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: p.name,
+    description: p.description,
+    image: p.image,
+    sku: p._id,
+    category: `${p.category} / ${p.subCategory}`,
+    brand: { "@type": "Brand", name: "OgeeEra" },
+    ...(rating?.count > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: rating.average, reviewCount: rating.count } } : {}),
+    offers: {
+      "@type": "Offer",
+      url,
+      priceCurrency: "LKR",
+      price: Number(now).toFixed(2),
+      availability: soldOut ? "https://schema.org/OutOfStock" : p.stockStatus === "Limited Stock" ? "https://schema.org/LimitedAvailability" : "https://schema.org/InStock",
+      itemCondition: "https://schema.org/NewCondition",
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingRate: { "@type": "MonetaryAmount", value: DELIVERY_FEE, currency: "LKR" },
+        shippingDestination: { "@type": "DefinedRegion", addressCountry: "LK" },
       },
-    };
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "LK",
+        returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+        merchantReturnDays: RETURN_DAYS,
+      },
+    },
   };
 
-  return productData ? (
-    <div className="border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100">
-      <Seo
-        title={productData.name}
-        description={String(productData.description || "").replace(/\s+/g, " ").slice(0, 155)}
-        path={`/product/${productData._id}`}
-        image={productData.image?.[0]}
-        type="product"
-        jsonLd={buildProductSchema()}
-      />
-      {/*product details*/}
-      <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
-        {/*product Images*/}
-        <div className="flex-1 flex flex-col-reverse gap-3 sm:flex-row">
-          <div className="flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-start sm:justify-start gap-2 sm:gap-3 sm:w-[18.7%] w-full">
-            {productData.image.map((item, index) => (
-              <img
-                onClick={() => setImage(item)}
-                key={index}
-                className="w-[24%] sm:w-full flex-shrink-0 cursor-pointer"
-                src={item}
-                alt={`${productData.name} view ${index + 1}`}
-              />
+  const handleAdd = () => {
+    if (hasSizes && !size) {
+      setSizeError(true);
+      return;
+    }
+    addToCart(p._id, hasSizes ? size : "default");
+  };
+
+  const handleBuyNow = () => {
+    if (hasSizes && !size) {
+      setSizeError(true);
+      return;
+    }
+    addToCart(p._id, hasSizes ? size : "default");
+    navigate("/cart");
+  };
+
+  const waNotify = `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(`Hi OgeeEra, please let me know when "${p.name}" is back in stock. ${url}`)}`;
+  const waAsk = `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(`Hi OgeeEra, I have a question about "${p.name}". ${url}`)}`;
+
+  return (
+    <div className="py-8 md:py-12">
+      <Seo title={p.name} description={String(p.description || "").replace(/\s+/g, " ").slice(0, 155) || `Buy ${p.name} online in Sri Lanka at OgeeEra.`} path={`/product/${p._id}`} image={p.image?.[0]} type="product" jsonLd={schema} />
+
+      <nav className="text-xs text-taupe mb-5" aria-label="Breadcrumb">
+        <Link to="/" className="hover:text-ink">Home</Link> / <Link to="/collection" className="hover:text-ink">Shop</Link> / {p.name}
+      </nav>
+
+      <div className="grid md:grid-cols-2 gap-8 lg:gap-14">
+        {/* Gallery */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
+          <div className="flex sm:flex-col gap-2 overflow-x-auto sm:w-20 shrink-0">
+            {p.image.map((src, i) => (
+              <button key={i} onClick={() => setImage(src)} className={`shrink-0 w-16 sm:w-full border ${image === src ? "border-ink" : "border-transparent"}`} aria-label={`View photo ${i + 1}`}>
+                <img src={thumb(src)} alt={`${p.name} view ${i + 1}`} className="w-full aspect-[3/4] object-cover" loading="lazy" />
+              </button>
             ))}
           </div>
-          <div className="w-full sm:w-[80%]">
-            <img className="w-full h-auto" src={image} alt={productData.name} />
+          <div className="flex-1 bg-sand">
+            <img src={big(image)} alt={p.name} className="w-full h-auto" fetchPriority="high" />
           </div>
         </div>
 
-        {/*product details*/}
-        <div className="flex-1">
-          <h1 className="font-medium text-2xl mt-2">{productData.name}</h1>
-
-          {productData.discount ? (
-            <div className="mt-5 flex sm:flex-col md:flex-row items-start md:items-center gap-3">
-              <p className="text-3xl font-medium">
-                {currency}{" "}
-                {(productData.price - (productData.price * productData.discount) / 100).toFixed(2)}
-              </p>
-              <div className="flex items-center gap-3">
-                <p className="text-xl text-gray-500 line-through">
-                  {currency} {productData.price}
-                </p>
-                <div className="bg-black text-white font-medium px-1 rounded-md">
-                  -{productData.discount}%
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="mt-5 text-3xl font-medium">
-              {currency} {productData.price}
-            </p>
+        {/* Details */}
+        <div>
+          <h1 className="text-4xl leading-tight">{p.name}</h1>
+          {rating?.count > 0 && (
+            <a href="#reviews" className="mt-2 inline-block text-sm text-ink/70">★ {rating.average} ({rating.count} reviews)</a>
           )}
 
-          {/* Display stock status here */}
-          {renderStockStatus()}
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-2xl">{formatPrice(now)}</span>
+            {p.discount > 0 && (
+              <>
+                <span className="text-lg line-through text-taupe">{formatPrice(p.price)}</span>
+                <span className="bg-ink text-white text-xs px-2 py-1">-{p.discount}%</span>
+              </>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-taupe">
+            {formatPrice(DELIVERY_FEE)} delivery islandwide, free over {formatPrice(FREE_DELIVERY_THRESHOLD)}
+          </p>
 
-          <p className="mt-5 mb-8 text-gray-500 md:w-4/5">{productData.description}</p>
+          <p className={`mt-4 text-sm ${p.stockStatus === "Limited Stock" ? "text-[#9a4a12]" : soldOut ? "text-red-700" : "text-green-800"}`}>
+            {soldOut ? "Sold out" : p.stockStatus === "Limited Stock" ? (typeof p.stock === "number" ? `Only ${p.stock} left` : "Only a few left") : "In stock"}
+          </p>
 
-          {/* Size Table - Only display if available */}
-          {productData.sizeChart && (
-            <div className="mt-5">
-              <h3 className="font-medium mb-2">Size Table</h3>
-              <img
-                src={productData.sizeChart}
-                alt="Size Table"
-                className="w-full max-w-md h-auto"
-              />
-            </div>
-          )}
+          <p className="mt-5 text-[15px] leading-relaxed text-ink/80 whitespace-pre-line">{p.description}</p>
 
-          {/* Only show size selection if sizes array has items */}
-          {productData.sizes && productData.sizes.length > 0 && (
-            <div className="flex flex-col gap-4 my-8">
-              <div className="flex justify-between items-center">
-                <p>Select Size</p>
+          {hasSizes && (
+            <div className="mt-7">
+              <div className="flex items-center justify-between max-w-sm">
+                <p className="text-sm font-medium">Size</p>
+                {p.sizeChart && <button onClick={() => setShowChart(true)} className="text-xs underline">Size guide</button>}
               </div>
-              <div className="flex gap-2">
-                {productData.sizes.map((item, index) => (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {p.sizes.map((s) => (
                   <button
-                    onClick={() => {
-                      setSize(item);
-                      setSizeError(false); // Clear error when size is selected
-                    }}
-                    className={`border py-2 px-4 bg-gray-100 ${
-                      item === size ? "border-orange-500" : ""
-                    }`}
-                    key={index}
+                    key={s}
+                    onClick={() => { setSize(s); setSizeError(false); }}
+                    className={`min-w-[48px] border px-4 py-2 text-sm ${s === size ? "border-ink bg-ink text-white" : "border-stone bg-white hover:border-ink"}`}
+                    aria-pressed={s === size}
                   >
-                    {item}
+                    {s}
                   </button>
                 ))}
               </div>
-              {/* Show error message if needed */}
-              {sizeError && <p className="text-red-500 text-sm mt-1">Please select a size</p>}
+              {sizeError && <p className="mt-2 text-sm text-red-700">Please select a size</p>}
             </div>
           )}
+          {!hasSizes && <p className="mt-6 text-sm text-ink/70">One size / free size.</p>}
 
-          {/* Disable Add to Cart button if out of stock */}
-          <button
-            onClick={handleAddToCart}
-            className={`${
-              productData.stockStatus === "Out of Stock"
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-black active:bg-gray-700"
-            } text-white px-8 py-3 text-sm mt-6`}
-            disabled={productData.stockStatus === "Out of Stock"}
-          >
-            {productData.stockStatus === "Out of Stock" ? "OUT OF STOCK" : "ADD TO CART"}
-          </button>
-
-          <button
-            onClick={() => toggleWishlist(productData._id)}
-            className="ml-3 border border-gray-300 px-4 py-3 text-sm mt-6 inline-flex items-center gap-2"
-          >
-            {isInWishlist(productData._id) ? (
-              <FiHeart className="text-red-500" />
+          <div className="mt-7 flex flex-wrap gap-3">
+            {soldOut ? (
+              <a href={waNotify} target="_blank" rel="noopener noreferrer" className="btn-dark flex-1 sm:flex-none sm:min-w-[260px]">Notify me when back</a>
             ) : (
-              <FiHeart className="text-gray-700" />
+              <>
+                <button onClick={handleAdd} className="btn-dark flex-1 sm:flex-none sm:min-w-[200px]">Add to cart</button>
+                <button onClick={handleBuyNow} className="btn-outline flex-1 sm:flex-none">Buy now</button>
+              </>
             )}
-            {isInWishlist(productData._id) ? "WISHLISTED" : "ADD TO WISHLIST"}
-          </button>
-
-          <hr className="mt-8 sm:w-4/5" />
-          <div className="text-sm text-gray-500 mt-5 flex flex-col gap-1">
-            <p>100% Original Product.</p>
-            <p>Cash On delivery is available on this product.</p>
-            <p>Easy return and exchange policy within 7 days.</p>
+            <button onClick={() => toggleWishlist(p._id)} className="border border-stone px-4 flex items-center justify-center" aria-label={isInWishlist(p._id) ? "Remove from wishlist" : "Add to wishlist"}>
+              <FiHeart className={isInWishlist(p._id) ? "fill-ink" : ""} />
+            </button>
           </div>
+
+          <ul className="mt-8 space-y-3 text-sm text-ink/80 border-t border-stone/60 pt-6">
+            <li className="flex gap-3"><FiTruck className="mt-0.5 shrink-0" /> Islandwide delivery. Cash on delivery or card payment.</li>
+            <li className="flex gap-3"><FiRefreshCw className="mt-0.5 shrink-0" /> Returns &amp; exchanges within {RETURN_DAYS} days. <Link to="/return-policy" className="underline">See policy</Link></li>
+          </ul>
+          <a href={waAsk} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block text-sm underline">Questions about fit or fabric? Ask us on WhatsApp</a>
         </div>
       </div>
 
-      {/* Size Chart Modal */}
-      {showSizeChart && productData.sizeChart && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-3xl w-full relative p-2">
-            <button
-              onClick={toggleSizeChart}
-              className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 text-xl"
-            >
-              ✕
-            </button>
-            <h3 className="text-xl font-medium p-4">Size Chart</h3>
-            <div className="p-4">
-              <img src={productData.sizeChart} alt="Size Chart" className="w-full h-auto" />
-            </div>
+      <ProductReviews productId={p._id} onSummary={setRating} />
+      <RelatedProducts category={p.category} subCategory={p.subCategory} excludeId={p._id} />
+
+      {showChart && p.sizeChart && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowChart(false)}>
+          <div className="bg-white max-w-3xl w-full p-4 relative" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowChart(false)} className="absolute right-4 top-3 text-xl" aria-label="Close">✕</button>
+            <h2 className="text-2xl mb-3">Size guide</h2>
+            <img src={p.sizeChart} alt={`${p.name} size guide`} className="w-full h-auto" />
           </div>
         </div>
       )}
-
-      {/*related products*/}
-      <RelatedProducts category={productData.category} subCategory={productData.subCategory} />
     </div>
-  ) : (
-    <div className="opacity-0"></div>
   );
 };
 

@@ -1,36 +1,28 @@
-import React from "react";
 import Hero from "../components/Hero";
+import CategoryCircles from "../components/CategoryCircles";
 import LatestCollection from "../components/LatestCollection";
+import PromoBanners from "../components/PromoBanners";
 import BestSeller from "../components/BestSeller";
-import OurPolicy from "../components/OurPolicy";
-import NewsLetterBox from "../components/NewsLetterBox";
 import SpecialOffers from "../components/SpecialOffers";
+import OurPolicy from "../components/OurPolicy";
+import CustomerReviews from "../components/CustomerReviews";
+import InstagramStrip from "../components/InstagramStrip";
+import NewsLetterBox from "../components/NewsLetterBox";
 import RevealOnScroll from "../components/RevealOnScroll";
 
-const Home = () => {
-  return (
-    <div>
-      <Hero />
-
-      <LatestCollection />
-
-      <RevealOnScroll delay={20}>
-        <SpecialOffers />
-      </RevealOnScroll>
-
-      <RevealOnScroll delay={40}>
-        <BestSeller />
-      </RevealOnScroll>
-
-      <RevealOnScroll delay={50}>
-        <OurPolicy />
-      </RevealOnScroll>
-
-      <RevealOnScroll delay={60} distance={18}>
-        <NewsLetterBox />
-      </RevealOnScroll>
-    </div>
-  );
-};
+const Home = () => (
+  <div>
+    <Hero />
+    <CategoryCircles />
+    <LatestCollection />
+    <RevealOnScroll delay={20}><PromoBanners /></RevealOnScroll>
+    <RevealOnScroll delay={30}><BestSeller /></RevealOnScroll>
+    <RevealOnScroll delay={30}><SpecialOffers /></RevealOnScroll>
+    <OurPolicy />
+    <CustomerReviews />
+    <InstagramStrip />
+    <NewsLetterBox />
+  </div>
+);
 
 export default Home;

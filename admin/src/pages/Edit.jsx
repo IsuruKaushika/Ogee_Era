@@ -26,6 +26,7 @@ const Edit = ({ token }) => {
   const [subCategory, setSubCategory] = useState('TopWear');
   const [price, setPrice] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [stock, setStock] = useState('');
   const [sizes, setSizes] = useState([]);
   const [bestseller, setBestseller] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -60,6 +61,7 @@ const Edit = ({ token }) => {
           setSizes(product.sizes || []);
           setBestseller(product.bestseller);
           setDiscount(product.discount || 0);
+          setStock(typeof product.stock === 'number' ? product.stock : '');
 
           // Handle image array structure from backend
           // Your backend stores images in an array called 'image'
@@ -125,6 +127,7 @@ const Edit = ({ token }) => {
       formData.append("sizes", JSON.stringify(sizes));
       formData.append("bestseller", bestseller.toString());
       formData.append("discount", discount.toString());
+      formData.append("stock", stock === "" ? "" : String(stock));
 
       if (image1) formData.append("image1", image1);
       if (image2) formData.append("image2", image2);
@@ -249,6 +252,19 @@ const Edit = ({ token }) => {
             <option value="BottomWear">BottomWear</option>
             <option value="WinterWear">WinterWear</option>
           </select>
+        </div>
+
+        <div>
+          <p className="mb-2">Units in stock</p>
+          <input
+            onChange={(e) => setStock(e.target.value)}
+            value={stock}
+            className="w-full max-w-[180px] px-2 py-2"
+            type="number"
+            min="0"
+            placeholder="not tracked"
+          />
+          <p className="text-xs text-gray-400 mt-1">Empty = manage status by hand. Set a number to track and auto sell-out at 0.</p>
         </div>
 
         <div>

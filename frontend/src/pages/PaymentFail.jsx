@@ -13,12 +13,12 @@ const PaymentFailed = () => {
     // Mark the unpaid attempt as Cancelled so it doesn't linger as pending
     const orderId = searchParams.get('order_id');
     const token = localStorage.getItem('token');
-    if (orderId && token) {
+    if (orderId) {
       axios
         .post(
           import.meta.env.VITE_BACKEND_URL + '/api/order/cancel-pending',
           { orderId },
-          { headers: { token } },
+          { headers: token ? { token } : {} },
         )
         .catch(() => {});
     }

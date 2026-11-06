@@ -51,7 +51,7 @@ const Returns = () => {
               Return & Refund Policy
             </h1>
             <div className="flex items-center gap-2">
-              <p className="font-semibold text-sm md:text-base">LAST UPDATED: MAY 3, 2025</p>
+              <p className="font-semibold text-sm md:text-base">LAST UPDATED: NOVEMBER 2026</p>
               <p className="w-8 md:w-11 h-[1px] bg-[#414141]"></p>
             </div>
           </div>
@@ -69,7 +69,7 @@ const Returns = () => {
         </Section>
 
         <Section id="exchanges" title="3. Exchanges">
-          <p>To exchange an item (for size, color, or style), please contact our customer support within 3 days of receiving your order. We will guide you through the exchange process.</p>
+          <p>To exchange an item (for size, color, or style), please contact our customer support within 7 days of receiving your order, subject to stock availability. We will guide you through the exchange process.</p>
         </Section>
 
         <Section id="nonReturnable" title="4. Non-Returnable Items">
@@ -97,7 +97,7 @@ const Returns = () => {
           <ul className="list-disc pl-5 mt-2 space-y-1">
             <li>Email: ogeeeraa@gmail.com</li>
             <li>Phone: +94 71 220 5395</li>
-            <li>Live Chat: Available on our website during business hours</li>
+            <li>WhatsApp: +94 71 220 5395 (Mon-Fri 9:00 AM - 6:00 PM, Sat 9:00 AM - 4:00 PM)</li>
           </ul>
         </Section>
       </div>

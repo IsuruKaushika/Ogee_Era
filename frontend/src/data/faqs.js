@@ -6,7 +6,7 @@ export const FAQ_GROUPS = [
     items: [
       {
         q: "What is OgeeEra?",
-        a: "OgeeEra (ogeeera.lk) is a Sri Lankan online fashion store selling clothing for women, men and kids. You can order online with secure checkout and islandwide delivery.",
+        a: "OgeeEra (ogeeera.lk) is a Sri Lankan online fashion store selling clothing for women and men. You can order online with secure checkout and islandwide delivery.",
       },
       {
         q: "How can I contact OgeeEra?",
@@ -19,7 +19,7 @@ export const FAQ_GROUPS = [
     items: [
       {
         q: "How do I place an order?",
-        a: "Browse the collection, choose your size and add items to your cart, then go to checkout. You can create an account or check out as a guest. Your order is confirmed once you receive the confirmation email.",
+        a: "Browse the collection, choose your size and add items to your cart, then go to checkout. No account is needed: you can check out as a guest, or log in to see your orders later. Your order is confirmed once you receive the confirmation email.",
       },
       {
         q: "What payment methods do you accept?",
@@ -40,11 +40,11 @@ export const FAQ_GROUPS = [
       },
       {
         q: "How much is delivery?",
-        a: "A delivery fee of Rs. 400 is added to your order at checkout.",
+        a: "Delivery is a flat Rs. 400 anywhere in Sri Lanka, and it is free on orders of Rs. 7,500 or more (after discounts). The delivery cost is shown on every product page and in your cart before you pay.",
       },
       {
         q: "How can I track my order?",
-        a: "You receive an order confirmation email after you order. If you have an account, you can also see your orders and their status on the My Orders page.",
+        a: "You receive an order confirmation email after you order. If you have an account, you can see your orders and their status on the My Orders page. Guests can message us on WhatsApp with their order reference for an update.",
       },
     ],
   },
@@ -57,7 +57,7 @@ export const FAQ_GROUPS = [
       },
       {
         q: "Can I exchange an item for a different size or colour?",
-        a: "Yes. Contact our support team within 3 days of receiving your order and we will guide you through the exchange.",
+        a: "Yes. Contact our support team within 7 days of receiving your order and we will guide you through the exchange, subject to stock availability.",
       },
       {
         q: "How do refunds work?",

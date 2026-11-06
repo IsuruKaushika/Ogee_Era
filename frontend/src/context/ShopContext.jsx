@@ -4,13 +4,17 @@ import PropTypes from "prop-types";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "../config/site";
+import { trackAddToCart } from "../utils/analytics";
+import { finalPrice } from "../utils/format";
 
 export const ShopContext = createContext();
 const ShopContextProvider = (props) => {
   const GUEST_CART_KEY = "guestCart";
   const GUEST_WISHLIST_KEY = "guestWishlist";
   const currency = "Rs.";
-  const delivery_fee = 400;
+  const delivery_fee = DELIVERY_FEE;
+  const free_delivery_threshold = FREE_DELIVERY_THRESHOLD;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const networkErrorMessage = "Unable to connect. Please refresh the page.";
   const networkToastId = "network-error";
@@ -45,6 +49,9 @@ const ShopContextProvider = (props) => {
       isFirstTime = true;
     }
     setCartItems(cartData);
+
+    const addedProduct = products.find((p) => p._id === itemId);
+    if (addedProduct) trackAddToCart(addedProduct, size, finalPrice(addedProduct));
 
     if (isFirstTime) {
       toast.success("Item added to cart", {
@@ -141,6 +148,23 @@ const ShopContextProvider = (props) => {
       }
     }
     return totalAmount.toFixed(2);
+  };
+
+  // Numeric totals (the server re-calculates the final amount when the order is placed)
+  const getCartNetSubtotal = () =>
+    Number(getCartAmount()) - Number(getCartDiscount());
+
+  const getDeliveryFee = () => {
+    const net = getCartNetSubtotal();
+    if (net <= 0) return 0;
+    return free_delivery_threshold > 0 && net >= free_delivery_threshold
+      ? 0
+      : delivery_fee;
+  };
+
+  const getCartTotal = () => {
+    const net = getCartNetSubtotal();
+    return net <= 0 ? 0 : net + getDeliveryFee();
   };
 
   const getProductsData = async (retries = 1) => {
@@ -383,6 +407,10 @@ const ShopContextProvider = (props) => {
     isProductsLoading,
     currency,
     delivery_fee,
+    free_delivery_threshold,
+    getCartNetSubtotal,
+    getDeliveryFee,
+    getCartTotal,
     search,
     setSearch,
     showSearch,

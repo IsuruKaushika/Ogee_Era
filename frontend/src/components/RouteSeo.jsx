@@ -3,22 +3,22 @@ import { useLocation } from "react-router-dom";
 import Seo, { SITE_URL } from "./Seo";
 import { buildFaqSchema } from "../data/faqs";
 
-const PRIVATE = ["/login", "/cart", "/place-order", "/wishlist", "/account", "/orders", "/payment-success", "/payment-failed"];
+const PRIVATE = ["/login", "/cart", "/place-order", "/wishlist", "/account", "/orders", "/payment-success", "/payment-failed", "/order-confirmed"];
 
 const PAGES = {
   "/": {
     title: "",
     description:
-      "OgeeEra is a Sri Lankan fashion store for women, men, and kids. Shop trending clothing with secure checkout, islandwide delivery, and easy returns.",
+      "OgeeEra is a Sri Lankan fashion store for women and men. Shop dresses, tops, sarongs and sarees with islandwide delivery, cash on delivery and easy 7-day returns.",
   },
   "/collection": {
-    title: "Shop Women's, Men's & Kids' Fashion",
+    title: "Shop Women's & Men's Fashion",
     description:
-      "Browse the full OgeeEra collection of women's, men's and kids' clothing in Sri Lanka. Islandwide delivery and easy returns.",
+      "Browse the full OgeeEra collection of women's and men's clothing in Sri Lanka. Islandwide delivery and easy returns.",
   },
   "/about": {
     title: "About Us",
-    description: "Learn about OgeeEra, a Sri Lankan online fashion store for the whole family.",
+    description: "Learn about OgeeEra, a Sri Lankan online fashion store for women and men.",
   },
   "/contact": {
     title: "Contact Us",
@@ -84,7 +84,7 @@ const organizationSchema = {
 const RouteSeo = () => {
   const path = useLocation().pathname.replace(/\/+$/, "") || "/";
 
-  if (path.startsWith("/product/")) return null;
+  if (path.startsWith("/product/") || path.startsWith("/category/")) return null;
   if (PRIVATE.includes(path)) return <Seo title="OgeeEra" path={path} noindex />;
 
   const page = PAGES[path];

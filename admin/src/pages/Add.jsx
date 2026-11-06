@@ -105,6 +105,7 @@ const Add = ({ token }) => {
   const [subCategory, setSubCategory] = useState('TopWear');
   const [price, setPrice] = useState('');
   const [discount, setDiscount] = useState('');
+  const [stock, setStock] = useState('');
   const [sizes, setSizes] = useState([]);
   const [bestseller, setBestseller] = useState(false);
   const [hasSizeChart, setHasSizeChart] = useState(false);
@@ -198,6 +199,8 @@ const Add = ({ token }) => {
       formData.append('category', category);
       formData.append('subCategory', subCategory);
       formData.append('price', price);
+      formData.append('discount', discount || 0);
+      formData.append('stock', stock);
       formData.append('sizes', JSON.stringify(sizes));
       formData.append('bestseller', bestseller);
       formData.append('hasSizeChart', hasSizeChart);
@@ -254,6 +257,7 @@ const Add = ({ token }) => {
     setDescription('');
     setDiscount('');
     setPrice('');
+    setStock('');
     setImage1(false);
     setImage2(false);
     setImage3(false);
@@ -431,6 +435,11 @@ const Add = ({ token }) => {
         <div>
           <p className='mb-2'>Product Price</p>
           <input onChange={(e) => setPrice(e.target.value)} value={price} className='w-full max-w-[180px] px-2 py-2' type='number' placeholder='0' required />
+        </div>
+        <div>
+          <p className='mb-2'>Units in stock</p>
+          <input onChange={(e) => setStock(e.target.value)} value={stock} className='w-full max-w-[180px] px-2 py-2' type='number' min='0' placeholder='e.g. 10' />
+          <p className='text-xs text-gray-400 mt-1'>Leave empty to manage stock status by hand. When set, it reduces on each order and shows Sold out at 0.</p>
         </div>
       </div>
       <div>

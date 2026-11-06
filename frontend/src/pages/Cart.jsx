@@ -1,283 +1,97 @@
-import React, { useEffect } from "react";
+import { useContext, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useContext } from "react";
-import { useState } from "react";
+import { FiTrash2, FiMinus, FiPlus } from "react-icons/fi";
 import { ShopContext } from "../context/ShopContext";
-import { assets } from "../assets/assets";
-import Title from "../components/Title";
-
 import CartTotal from "../components/CartTotal";
 import CartSkeleton from "../components/CartSkeleton";
-import { toast } from "react-toastify";
+import { formatPrice, finalPrice } from "../utils/format";
+import { trackBeginCheckout } from "../utils/analytics";
+
+const thumb = (u) => u?.replace("/upload/", "/upload/f_auto,q_auto,w_200,c_limit/");
 
 const Cart = () => {
-  const { products, isProductsLoading, currency, cartItems, updateQuantity, navigate, token } =
-    useContext(ShopContext);
+  const { products, isProductsLoading, cartItems, updateQuantity, navigate, token, getCartTotal } = useContext(ShopContext);
 
-  const [cartData, setCartData] = useState([]);
-
-  useEffect(() => {
-    if (products.length > 0) {
-      const tempData = [];
-      for (const items in cartItems) {
-        for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
-            tempData.push({
-              _id: items,
-              size: item,
-              quantity: cartItems[items][item],
-            });
-          }
-        }
+  const lines = useMemo(() => {
+    const out = [];
+    for (const id in cartItems) {
+      const product = products.find((p) => p._id === id);
+      if (!product) continue;
+      for (const size in cartItems[id]) {
+        const quantity = cartItems[id][size];
+        if (quantity > 0) out.push({ product, size, quantity });
       }
-      setCartData(tempData);
     }
+    return out;
   }, [cartItems, products]);
 
-  if (isProductsLoading) {
-    return <CartSkeleton />;
+  if (isProductsLoading) return <CartSkeleton />;
+
+  const hasSoldOut = lines.some((l) => l.product.stockStatus === "Out of Stock");
+
+  const checkout = () => {
+    trackBeginCheckout(lines.map((l) => ({ ...l.product, size: l.size, quantity: l.quantity })), getCartTotal());
+    navigate("/place-order");
+  };
+
+  if (lines.length === 0) {
+    return (
+      <div className="py-24 text-center">
+        <h1 className="text-4xl">Your cart is empty</h1>
+        <p className="mt-3 text-ink/70">Find something you love in our latest arrivals.</p>
+        <Link to="/collection" className="btn-dark mt-8">Continue shopping</Link>
+      </div>
+    );
   }
 
   return (
-    <div className="border-t pt-14">
-      <div className="text-2xl mb-3">
-        <Title text1={"YOUR"} text2={"CART"} />
-      </div>
-      <div>
-        {cartData.length > 0 && (
-          <div className="mb-2 hidden grid-cols-[minmax(0,4fr)_minmax(120px,1fr)_minmax(140px,1fr)_minmax(120px,1fr)_48px] gap-4 border-b border-gray-300 pb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 sm:grid">
-            <p>Product</p>
-            <p className="text-center">Price</p>
-            <p className="text-center">Quantity</p>
-            <p className="text-center">Subtotal</p>
-            <span className="sr-only">Remove</span>
-          </div>
-        )}
-        {cartData.map((item, index) => {
-          const productData = products.find((product) => product._id === item._id);
-          if (!productData) return null;
-
-          const discountedPrice =
-            productData.discount > 0
-              ? productData.price * (1 - productData.discount / 100)
-              : productData.price;
-          const lineTotal = discountedPrice * item.quantity;
-
-          return (
-            <div key={index} className="border-b border-gray-200 py-4 text-gray-700">
-              {/* Mobile Layout */}
-              <div className=" bg-white md:hidden">
-                <div className="flex items-start gap-3">
-                  <Link className="cursor-pointer" to={`/product/${productData._id}`}>
-                    <img
-                      className="h-full w-20 object-cover"
-                      src={productData.image[0]}
-                      alt={productData.name}
-                      onClick={navigate}
-                    />
-                  </Link>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <Link className="cursor-pointer" to={`/product/${productData._id}`}>
-                        <p className="line-clamp-2 text-sm font-semibold leading-5 text-gray-900">
-                          {productData.name}
-                        </p>
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(item._id, item.size, 0)}
-                        className="shrink-0 rounded-full border border-gray-300 p-2"
-                        aria-label={`Remove ${productData.name} from cart`}
-                      >
-                        <img className="w-3" src={assets.bin_icon} alt="" />
-                      </button>
+    <div className="py-8 md:py-12">
+      <h1 className="text-4xl md:text-5xl mb-8">Your Cart</h1>
+      <div className="grid lg:grid-cols-[1fr_380px] gap-10 lg:gap-14">
+        <ul className="divide-y divide-stone/60 border-y border-stone/60">
+          {lines.map(({ product, size, quantity }) => {
+            const unit = finalPrice(product);
+            const soldOut = product.stockStatus === "Out of Stock";
+            return (
+              <li key={`${product._id}-${size}`} className="py-5 flex gap-4">
+                <Link to={`/product/${product._id}`} className="shrink-0">
+                  <img src={thumb(product.image[0])} alt={product.name} className="w-24 sm:w-28 aspect-[3/4] object-cover bg-sand" />
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between gap-3">
+                    <div>
+                      <Link to={`/product/${product._id}`} className="font-display text-xl leading-tight">{product.name}</Link>
+                      {size !== "default" && <p className="mt-1 text-sm text-ink/65">Size: {size}</p>}
+                      {soldOut && <p className="mt-1 text-sm text-red-700">Sold out. Remove to continue.</p>}
                     </div>
-
-                    <div className="">
-                      <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-3 py-2 text-xs">
-                        <p className="text-gray-500">Size</p>
-                        <p className="text-right font-medium text-gray-800">{item.size}</p>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-3 py-2 text-xs">
-                        <p className="text-gray-500">Unit Price</p>
-                        <div className="flex items-center justify-end gap-2 text-right">
-                          <span className="font-semibold text-gray-900">
-                            {currency}
-                            {discountedPrice.toFixed(2)}
-                          </span>
-                          {productData.discount > 0 && (
-                            <span className="text-[11px] text-gray-400 line-through">
-                              {currency}
-                              {productData.price}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
-                        <p className="text-gray-500">Subtotal</p>
-                        <p className="text-right font-semibold text-gray-900">
-                          {currency}
-                          {lineTotal.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
+                    <p className="text-sm font-medium whitespace-nowrap">{formatPrice(unit * quantity)}</p>
                   </div>
-                </div>
-
-                <div className="mt-3 flex items-center justify-between">
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                    Quantity
+                  <p className="mt-1 text-sm text-ink/65">
+                    {formatPrice(unit)} each{product.discount > 0 && <span className="ml-2 line-through text-taupe">{formatPrice(product.price)}</span>}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateQuantity(item._id, item.size, Math.max(1, item.quantity - 1))
-                      }
-                      className="h-8 w-8 rounded-full bg-gray-100 text-lg leading-none"
-                      aria-label={`Decrease quantity of ${productData.name}`}
-                    >
-                      -
-                    </button>
-                    <input
-                      onChange={(e) =>
-                        e.target.value === "" || e.target.value === "0"
-                          ? null
-                          : updateQuantity(item._id, item.size, Number(e.target.value))
-                      }
-                      className="w-14 rounded-lg border border-gray-300 py-1 text-center text-sm"
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateQuantity(item._id, item.size, item.quantity + 1)}
-                      className="h-8 w-8 rounded-full bg-gray-100 text-lg leading-none"
-                      aria-label={`Increase quantity of ${productData.name}`}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {/* Desktop Layout */}
-              <div className="hidden grid-cols-[minmax(0,4fr)_minmax(120px,1fr)_minmax(140px,1fr)_minmax(120px,1fr)_48px] items-center gap-4 md:grid">
-                <div className="flex items-start gap-6">
-                  <Link className="cursor-pointer" to={`/product/${productData._id}`}>
-                    <img
-                      className="w-16 sm:w-20 h-full"
-                      src={productData.image[0]}
-                      alt=""
-                      onClick={navigate}
-                    />
-                  </Link>
-                  <div>
-                    <Link className="cursor-pointer" to={`/product/${productData._id}`}>
-                      <p className="text-xs sm:text-lg font-medium">{productData.name}</p>
-                    </Link>
-                    <div className="mt-2">
-                      <p className="inline-flex border px-2 sm:px-3 sm:py-1">{item.size}</p>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="inline-flex items-center border border-stone bg-white">
+                      <button className="p-2.5" aria-label="Decrease quantity" onClick={() => updateQuantity(product._id, size, Math.max(1, quantity - 1))}><FiMinus className="w-3.5 h-3.5" /></button>
+                      <span className="w-9 text-center text-sm" aria-live="polite">{quantity}</span>
+                      <button className="p-2.5" aria-label="Increase quantity" onClick={() => updateQuantity(product._id, size, quantity + 1)}><FiPlus className="w-3.5 h-3.5" /></button>
                     </div>
+                    <button className="p-2 text-ink/60 hover:text-ink" aria-label={`Remove ${product.name}`} onClick={() => updateQuantity(product._id, size, 0)}><FiTrash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
-                <div className="text-center">
-                  <div className="flex flex-col items-center gap-1">
-                    <p className="font-medium text-gray-900">
-                      {currency}
-                      {discountedPrice.toFixed(2)}
-                    </p>
-                    {productData.discount > 0 && (
-                      <p className="text-sm text-gray-400 line-through">
-                        {currency}
-                        {productData.price}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateQuantity(item._id, item.size, Math.max(1, item.quantity - 1))
-                    }
-                    className="h-9 w-9 rounded-full bg-gray-100 text-lg leading-none"
-                    aria-label={`Decrease quantity of ${productData.name}`}
-                  >
-                    -
-                  </button>
-                  <input
-                    onChange={(e) =>
-                      e.target.value === "" || e.target.value === "0"
-                        ? null
-                        : updateQuantity(item._id, item.size, Number(e.target.value))
-                    }
-                    className="w-16 rounded-lg border border-gray-300 py-1 text-center text-sm"
-                    type="number"
-                    min={1}
-                    value={item.quantity}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => updateQuantity(item._id, item.size, item.quantity + 1)}
-                    className="h-9 w-9 rounded-full bg-gray-100 text-lg leading-none"
-                    aria-label={`Increase quantity of ${productData.name}`}
-                  >
-                    +
-                  </button>
-                </div>
-                <p className="text-center font-semibold text-gray-900">
-                  {currency}
-                  {lineTotal.toFixed(2)}
-                </p>
-                <img
-                  onClick={() => updateQuantity(item._id, item.size, 0)}
-                  className="mx-auto w-4 cursor-pointer sm:w-4"
-                  src={assets.bin_icon}
-                  alt=""
-                />
-              </div>
-            </div>
-          );
-        })}
-        {cartData.length === 0 && (
-          <div className="text-center my-20">
-            <p className="text-gray-600 mb-6">Your cart is currently empty.</p>
-            <button
-              onClick={() => navigate("/collection")}
-              className="bg-black text-white px-6 py-3 text-sm"
-            >
-              CONTINUE SHOPPING
-            </button>
-          </div>
-        )}
+              </li>
+            );
+          })}
+        </ul>
+
+        <aside className="lg:sticky lg:top-24 self-start bg-white border border-stone/60 p-6">
+          <CartTotal />
+          <button onClick={checkout} disabled={hasSoldOut} className="btn-dark w-full mt-6">Proceed to checkout</button>
+          <p className="mt-3 text-xs text-center text-ink/60">
+            No account needed. {!token && <Link to="/login" className="underline">Log in</Link>}{!token && " to use your saved details."}
+          </p>
+          <Link to="/collection" className="block mt-4 text-center btn-link">Continue shopping</Link>
+        </aside>
       </div>
-      {cartData.length > 0 && (
-        <div className="flex justify-end my-20">
-          <div className="w-full sm:w-[450px]">
-            <CartTotal />
-            <div className="w-full text-end">
-              <button
-                onClick={() => {
-                  if (!token) {
-                    toast.warn("Please login first to proceed to checkout");
-                    navigate("/login");
-                  } else {
-                    navigate("/place-order");
-                  }
-                }}
-                className="bg-black text-white text-sm my-8 px-6 py-3 disabled:bg-slate-500 disabled:cursor-not-allowed"
-                disabled={cartData.length === 0}
-              >
-                PROCEED TO CHECKOUT
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
