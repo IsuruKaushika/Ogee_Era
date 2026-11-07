@@ -1,47 +1,30 @@
-import React, { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { ShopContext } from "../context/ShopContext";
-import Title from "./Title";
 import ProductItem from "./ProductItem";
 import ProductGridSkeleton from "./ProductGridSkeleton";
-import { useEffect, useState } from "react";
 
 const BestSeller = () => {
-    const { products, isProductsLoading } = useContext(ShopContext);
-    const [bestSeller, setBestSeller] = useState([]);
+  const { products, isProductsLoading } = useContext(ShopContext);
+  const best = useMemo(() => products.filter((p) => p.bestseller && p.stockStatus !== "Out of Stock").slice(0, 5), [products]);
+  if (!isProductsLoading && best.length === 0) return null;
 
-    useEffect(() => {
-        const bestproduct = products.filter((item) => (item.bestseller));
-        setBestSeller(bestproduct.slice(0, 5));
-    }, [products])
-
-    return (
-      <div className="my-10">
-        <div className="text-center py-8 text-3xl">
-          <Title text1={"BEST"} text2={"SELLERS"} />
-          <p className="w-3/4 m-auto text-xs sm:text.sm md:text-base text-gray-600">
-            Customer Favorites, Timeless Styles.
-          </p>
-        </div>
-        {isProductsLoading ? (
-          <ProductGridSkeleton count={5} />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6">
-            {bestSeller.map((item, index) => (
-              <ProductItem
-                key={index}
-                id={item._id}
-                name={item.name}
-                image={item.image}
-                price={item.price}
-                stockStatus={item.stockStatus}
-                stock={item.stock}
-                discount={item.discount}
-              />
-            ))}
-          </div>
-        )}
+  return (
+    <section className="container-x py-10 md:py-14 border-t border-stone/60">
+      <div className="text-center mb-8">
+        <h2 className="font-display text-4xl">Best Sellers</h2>
+        <p className="mt-2 text-sm text-ink/70">Customer favourites, timeless styles.</p>
       </div>
-    );
-}
+      {isProductsLoading ? (
+        <ProductGridSkeleton count={5} />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 gap-y-8">
+          {best.map((p) => (
+            <ProductItem key={p._id} id={p._id} name={p.name} image={p.image} price={p.price} stockStatus={p.stockStatus} discount={p.discount} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
 
-export default BestSeller
+export default BestSeller;

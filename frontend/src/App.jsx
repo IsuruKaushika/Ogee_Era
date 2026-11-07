@@ -1,6 +1,7 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, Outlet, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import AnnouncementBar from "./components/AnnouncementBar";
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
 import Contact from "./pages/Contact";
@@ -14,31 +15,49 @@ import Login from "./pages/Login";
 import About from "./pages/About";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFail";
+import OrderConfirmed from "./pages/OrderConfirmed";
 import WhatsAppFloat from "./components/WhatsappFloat";
 import Terms from "./pages/Terms";
-import privacy from "./pages/Policy";
 import Returns from "./pages/Returns";
 import ScrollToTop from "./components/ScrollToTop";
 import Wishlist from "./pages/Wishlist";
 import Account from "./pages/Account";
-import { ToastContainer, toast } from "react-toastify"; //used for notifications
+import { ToastContainer } from "react-toastify"; //used for notifications
 import "react-toastify/dist/ReactToastify.css";
 import Policy from "./pages/Policy";
 import RouteSeo from "./components/RouteSeo";
 import Faq from "./pages/Faq";
+import { initAnalytics, trackPageView } from "./utils/analytics";
 
-const App = () => {
-  return (
-    <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] max-w-[1920px] mx-auto ">
-      <ToastContainer />
-      <RouteSeo />
-      <ScrollToTop />
-      <Navbar />
-      <div className="mt-[72px] md:mt-[96px]">
-        <SearchBar />
-        <Routes>
-          <Route path="/" element={<Home />} />
+// Inner pages share the page gutters; the home page lays out its own full-width sections.
+const PageShell = () => (
+  <div className="container-x">
+    <Outlet />
+  </div>
+);
+
+const AnalyticsTracker = () => {
+  const { pathname } = useLocation();
+  useEffect(() => initAnalytics(), []);
+  useEffect(() => trackPageView(pathname), [pathname]);
+  return null;
+};
+
+const App = () => (
+  <div className="min-h-screen flex flex-col bg-ivory">
+    <ToastContainer />
+    <RouteSeo />
+    <ScrollToTop />
+    <AnalyticsTracker />
+    <AnnouncementBar />
+    <Navbar />
+    <SearchBar />
+    <main className="flex-1">
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route element={<PageShell />}>
           <Route path="/collection" element={<Collection />} />
+          <Route path="/category/:slug" element={<Collection />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
           <Route path="/faq" element={<Faq />} />
@@ -49,18 +68,18 @@ const App = () => {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/account" element={<Account />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/order-confirmed" element={<OrderConfirmed />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-failed" element={<PaymentFailed />} />
           <Route path="/terms-and-conditions" element={<Terms />} />
           <Route path="/privacy-and-policy" element={<Policy />} />
           <Route path="/return-policy" element={<Returns />} />
-        </Routes>
-      </div>
-      <WhatsAppFloat />
-
-      <Footer />
-    </div>
-  );
-};
+        </Route>
+      </Routes>
+    </main>
+    <WhatsAppFloat />
+    <Footer />
+  </div>
+);
 
 export default App;

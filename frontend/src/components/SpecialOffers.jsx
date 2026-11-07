@@ -1,43 +1,32 @@
-import React,{useContext} from 'react'
-import { ShopContext } from '../context/ShopContext';
-import Title from './Title';
-import ProductItem from './ProductItem';
-import { useEffect, useState } from 'react';
+import { useContext, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { ShopContext } from "../context/ShopContext";
+import ProductItem from "./ProductItem";
 
 const SpecialOffers = () => {
+  const { products } = useContext(ShopContext);
+  const offers = useMemo(
+    () => products.filter((p) => p.discount > 0 && p.stockStatus !== "Out of Stock").sort((a, b) => b.discount - a.discount).slice(0, 5),
+    [products],
+  );
+  if (!offers.length) return null;
 
-    const {products} = useContext(ShopContext);
-    const [latestProducts, setLatestProducts] = useState([]);
-    useEffect(() => {
-        const discountedProducts = products.filter(item => item.discount > 0);
-        setLatestProducts(discountedProducts.slice(0, 10));
-    }, [products])
-
-
-  return latestProducts.length > 0 ? (
-    <div className="my-10">
-      <div className="text-center py-8 text-3xl">
-        <Title text1={"SPECIAL"} text2={"OFFERS"} />
-        <p className="w-3/4 m-auto text-xs sm:text-base text-gray-600">
-          Elevate Your Wardrobe with the Latest Styles
-        </p>
+  return (
+    <section className="container-x py-10 md:py-14 border-t border-stone/60">
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <h2 className="font-display text-4xl">Special Offers</h2>
+          <p className="mt-2 text-sm text-ink/70">Our biggest savings right now.</p>
+        </div>
+        <Link to="/collection?offers=1" className="btn-link hidden sm:block">View all offers</Link>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6">
-        {latestProducts.map((item, index) => (
-          <ProductItem
-            key={index}
-            id={item._id}
-            image={item.image}
-            name={item.name}
-            price={item.price}
-            stock={item.stock}
-            stockStatus={item.stockStatus}
-            discount={item.discount}
-          />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 gap-y-8">
+        {offers.map((p) => (
+          <ProductItem key={p._id} id={p._id} name={p.name} image={p.image} price={p.price} stockStatus={p.stockStatus} discount={p.discount} />
         ))}
       </div>
-    </div>
-  ) : null;
-}
+    </section>
+  );
+};
 
-export default SpecialOffers
+export default SpecialOffers;

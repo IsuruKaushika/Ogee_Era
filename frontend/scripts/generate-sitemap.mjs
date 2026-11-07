@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CATEGORY_SLUGS } from "../src/data/categories.js";
 
 const SITE_URL = "https://www.ogeeera.lk";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -24,6 +25,7 @@ const staticPages = [
   ["/about", "monthly", "0.6"],
   ["/contact", "monthly", "0.6"],
   ["/faq", "monthly", "0.7"],
+  ...CATEGORY_SLUGS.map((s) => [`/category/${s}`, "weekly", "0.8"]),
   ["/terms-and-conditions", "yearly", "0.4"],
   ["/privacy-and-policy", "yearly", "0.4"],
   ["/return-policy", "yearly", "0.4"],

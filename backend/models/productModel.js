@@ -11,6 +11,8 @@ const productSchema = new mongoose.Schema({
     sizes: { type: Array, required: true },
     bestseller: { type: Boolean, default: false },
     date: { type: Number, required: true },
+    // Units on hand. null/undefined = not tracked (stockStatus is then set by hand).
+    stock: { type: Number, min: 0, default: null },
     // Add stock status field
     stockStatus: { 
         type: String, 

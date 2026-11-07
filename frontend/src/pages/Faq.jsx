@@ -1,8 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FAQ_GROUPS } from "../data/faqs";
+import { buildFaqGroups } from "../data/faqs";
+import { useSettings } from "../context/SettingsContext";
 
-const Faq = () => (
+const Faq = () => {
+  const settings = useSettings();
+  const FAQ_GROUPS = buildFaqGroups(settings);
+  return (
   <div className="max-w-4xl mx-auto px-4 py-16 text-[#414141]">
     <div className="border-b border-gray-300 pb-10 mb-10">
       <div className="flex items-center gap-2">
@@ -13,7 +17,7 @@ const Faq = () => (
         Frequently Asked Questions
       </h1>
       <p className="text-sm md:text-base">
-        Answers about ordering, payment, delivery and returns at OgeeEra.
+        Answers about ordering, payment, delivery and returns at {settings.business.name}.
       </p>
     </div>
 
@@ -36,6 +40,7 @@ const Faq = () => (
       <Link to="/return-policy" className="underline">full return policy</Link>.
     </p>
   </div>
-);
+  );
+};
 
 export default Faq;

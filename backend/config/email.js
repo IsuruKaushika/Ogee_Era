@@ -114,3 +114,14 @@ Phone: ${address.phone}
     }
   }
 };
+
+// Contact-form messages go to the shop's inbox (reply-to is the customer).
+export const sendContactEmail = async ({ to, name, email, subject, message }) => {
+  await transporter.sendMail({
+    from: `"${process.env.SMTP_FROM_NAME || "Website"}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to,
+    replyTo: email,
+    subject: `Website enquiry: ${subject || "No subject"}`,
+    text: `From: ${name} <${email}>\n\n${message}`,
+  });
+};

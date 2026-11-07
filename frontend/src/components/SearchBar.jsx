@@ -1,33 +1,44 @@
-import React,{useContext,useEffect,useState} from 'react'
+import { useContext, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { FiSearch, FiX } from "react-icons/fi";
+import { ShopContext } from "../context/ShopContext";
 
-import { ShopContext } from '../context/ShopContext'
-import { assets } from '../assets/assets';
-
-import { useLocation } from'react-router-dom';
-
-const SearchBar = () =>{
-
-  const{search,setSearch,setShowSearch} = useContext(ShopContext);
-  const [visible,setVisible] = useState(false)
+// Opened from the search icon in the header. Typing filters the Collection page.
+const SearchBar = () => {
+  const { search, setSearch, showSearch, setShowSearch, navigate } = useContext(ShopContext);
   const location = useLocation();
+  const ref = useRef(null);
 
-  useEffect(()=>{
-   if(location.pathname.includes('collection')){
-      setVisible(true);
-   }
-   else{
-      setVisible(false);
-   }
-  }),[location]
+  useEffect(() => {
+    if (showSearch) ref.current?.focus();
+  }, [showSearch]);
 
-  return visible?(
-    <div className='text-center'>
-      <div className ='inline-flex items-center justify-center border border-gray-400 px-5 py-2 mt-6 md:mt-12 rounded-full w-full sm:w-2/3 lg:w-1/2 h-12'>
-      <input value ={search} onChange={(e)=>setSearch(e.target.value)} className='flex-1 outline-none bg-inherit text-sm' type="text" placeholder='Search for Products...'/>
-      <img src={assets.search_icon} alt='search' className='w-4'/>
-      </div>
+  if (!showSearch) return null;
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!location.pathname.startsWith("/collection")) navigate("/collection");
+  };
+
+  return (
+    <div className="bg-sand/60 border-b border-stone/60">
+      <form onSubmit={submit} className="container-x flex items-center gap-3 h-14">
+        <FiSearch className="w-4 h-4 text-taupe" />
+        <input
+          ref={ref}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 bg-transparent outline-none text-sm"
+          type="search"
+          placeholder="Search dresses, sarongs, tops..."
+          aria-label="Search products"
+        />
+        <button type="button" aria-label="Close search" onClick={() => { setSearch(""); setShowSearch(false); }}>
+          <FiX className="w-4 h-4" />
+        </button>
+      </form>
     </div>
-  ):null
-}
+  );
+};
 
-export default SearchBar
+export default SearchBar;

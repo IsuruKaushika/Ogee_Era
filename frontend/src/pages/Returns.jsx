@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useSettings } from '../context/SettingsContext';
 
 const Returns = () => {
+  const { commerce, business } = useSettings();
   const [expandedSections, setExpandedSections] = useState({
     returns: true,
     refunds: false,
@@ -51,7 +53,7 @@ const Returns = () => {
               Return & Refund Policy
             </h1>
             <div className="flex items-center gap-2">
-              <p className="font-semibold text-sm md:text-base">LAST UPDATED: MAY 3, 2025</p>
+              <p className="font-semibold text-sm md:text-base">LAST UPDATED: NOVEMBER 2026</p>
               <p className="w-8 md:w-11 h-[1px] bg-[#414141]"></p>
             </div>
           </div>
@@ -60,7 +62,7 @@ const Returns = () => {
 
       <div className="space-y-4">
         <Section id="returns" title="1. Returns">
-          <p>We accept returns within 7 days of your purchase date. Items must be unused, in original condition, and returned in their original packaging.</p>
+          <p>We accept returns within {commerce.returnDays} days of your purchase date. Items must be unused, in original condition, and returned in their original packaging.</p>
         </Section>
 
         <Section id="refunds" title="2. Refunds">
@@ -69,7 +71,7 @@ const Returns = () => {
         </Section>
 
         <Section id="exchanges" title="3. Exchanges">
-          <p>To exchange an item (for size, color, or style), please contact our customer support within 3 days of receiving your order. We will guide you through the exchange process.</p>
+          <p>To exchange an item (for size, color, or style), please contact our customer support within {commerce.exchangeDays} days of receiving your order, subject to stock availability. We will guide you through the exchange process.</p>
         </Section>
 
         <Section id="nonReturnable" title="4. Non-Returnable Items">
@@ -95,9 +97,9 @@ const Returns = () => {
         <Section id="contact" title="8. Contact Us">
           <p>If you have questions or need assistance with your return, our support team is here to help:</p>
           <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li>Email: ogeeeraa@gmail.com</li>
-            <li>Phone: +94 71 220 5395</li>
-            <li>Live Chat: Available on our website during business hours</li>
+            {business.email && <li>Email: {business.email}</li>}
+            {business.phone && <li>Phone: {business.phone}</li>}
+            {business.whatsapp && <li>WhatsApp: +{business.whatsapp}{business.hours ? ` (${business.hours})` : ''}</li>}
           </ul>
         </Section>
       </div>

@@ -3,6 +3,10 @@ import userModel from "../models/userModel.js";
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 import { sendOrderConfirmationEmail } from "../config/email.js";
+import productModel from "../models/productModel.js";
+import { statusFromStock } from "../config/shop.js";
+import { getSettings, deliveryFeeFor } from "../config/settings.js";
+import { GUEST_ID } from "../middleware/optionalAuth.js";
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +24,7 @@ const REAL_ORDERS_FILTER = {
 
 // Confirmation goes to the logged-in account's email; falls back to the checkout form email
 const getCustomerEmail = async (userId, address) => {
+  if (!userId || userId === "guest") return address?.email;
   try {
     const user = await userModel.findById(userId).select("email");
     if (user?.email) return user.email;
@@ -29,112 +34,191 @@ const getCustomerEmail = async (userId, address) => {
   return address?.email;
 };
 
+
+const isGuest = (userId) => !userId || userId === GUEST_ID;
+
+const clearUserCart = async (userId) => {
+  if (!isGuest(userId)) await userModel.findByIdAndUpdate(userId, { cartData: {} });
+};
+
+// Never trust prices or totals sent by the browser: rebuild the order from the product database.
+class OrderError extends Error {}
+
+const buildOrderFromCart = async (rawItems) => {
+  if (!Array.isArray(rawItems) || rawItems.length === 0) throw new OrderError("Your cart is empty");
+
+  // Merge duplicate product ids so stock is checked against the total quantity wanted
+  const wanted = {};
+  for (const it of rawItems) {
+    const id = String(it?._id || "");
+    const qty = Math.floor(Number(it?.quantity));
+    if (!id || !(qty > 0)) throw new OrderError("Invalid item in cart");
+    wanted[id] = (wanted[id] || 0) + qty;
+  }
+  const products = await productModel.find({ _id: { $in: Object.keys(wanted) } }).lean();
+  const byId = Object.fromEntries(products.map((p) => [String(p._id), p]));
+
+  const items = [];
+  let subtotal = 0;
+  for (const it of rawItems) {
+    const product = byId[String(it._id)];
+    if (!product) throw new OrderError("An item in your cart is no longer available");
+    if (product.stockStatus === "Out of Stock") throw new OrderError(`${product.name} is sold out`);
+    if (typeof product.stock === "number" && wanted[String(product._id)] > product.stock) {
+      throw new OrderError(`Only ${product.stock} left of ${product.name}`);
+    }
+    const size = String(it.size || "default");
+    if (product.sizes?.length && size !== "default" && !product.sizes.includes(size)) {
+      throw new OrderError(`Size ${size} is not available for ${product.name}`);
+    }
+    const quantity = Math.floor(Number(it.quantity));
+    const unit = product.discount ? product.price * (1 - product.discount / 100) : product.price;
+    subtotal += unit * quantity;
+    items.push({ ...product, size, quantity });
+  }
+  subtotal = Math.round(subtotal * 100) / 100;
+  const deliveryFee = deliveryFeeFor(await getSettings(), subtotal);
+  return { items, subtotal, deliveryFee, amount: Math.round((subtotal + deliveryFee) * 100) / 100 };
+};
+
+const sanitizeAddress = (a = {}) => {
+  const clean = (v, max = 200) => String(v ?? "").trim().slice(0, max);
+  return {
+    firstName: clean(a.firstName, 60), lastName: clean(a.lastName, 60), email: clean(a.email, 120),
+    street: clean(a.street), city: clean(a.city, 80), state: clean(a.state, 80),
+    zipcode: clean(a.zipcode, 12), country: clean(a.country || "Sri Lanka", 60),
+    phone: clean(a.phone, 20),
+  };
+};
+
+// Reduce managed stock once an order is confirmed (COD placed, or PayHere paid).
+const decrementStock = async (items) => {
+  for (const it of items) {
+    const p = await productModel.findById(it._id);
+    if (!p || typeof p.stock !== "number") continue;
+    p.stock = Math.max(0, p.stock - Number(it.quantity || 0));
+    p.stockStatus = statusFromStock(p.stock);
+    await p.save();
+  }
+};
+
+// Mirror each order to the Google Sheet from the server so it is never lost when a customer closes
+// the browser. The URL is set in the admin panel (Settings) or GOOGLE_SHEET_URL; skipped if neither is set.
+const logOrderToSheet = async (order, status) => {
+  try {
+    const a = order.address || {};
+    const sheetUrl = (await getSettings()).orderSheetUrl || process.env.GOOGLE_SHEET_URL;
+    if (!sheetUrl) return;
+    await fetch(sheetUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        orderId: String(order._id),
+        orderStatus: status,
+        customerName: `${a.firstName} ${a.lastName}`,
+        email: a.email,
+        address: [a.street, a.city, a.state, a.zipcode, a.country].filter(Boolean).join(", "),
+        items: order.items.map((i) => `${i.name} (${i.size}) x ${i.quantity}`).join("; "),
+        phoneNumber: a.phone,
+        paymentMethod: order.paymentMethod,
+        amount: order.amount,
+        orderedDate: new Date().toISOString(),
+      }),
+    });
+  } catch (err) {
+    console.error("Google Sheet log failed:", err.message);
+  }
+};
+
+const sendConfirmation = async (order) => {
+  const to = await getCustomerEmail(order.userId, order.address);
+  if (!to) return;
+  try {
+    await sendOrderConfirmationEmail({
+      to, orderId: order._id, items: order.items, amount: order.amount,
+      address: order.address, paymentMethod: order.paymentMethod,
+    });
+  } catch (emailErr) {
+    console.error("Failed to send order confirmation email:", emailErr.message);
+  }
+};
+
 const placeOrder = async (req, res) => {
   try {
-    const { userId, items, amount, address } = req.body;
+    const { userId, items: rawItems, address } = req.body;
+    const built = await buildOrderFromCart(rawItems);
 
-    const orderData = {
+    const newOrder = new orderModel({
       userId,
-      items,
-      address,
-      amount,
+      items: built.items,
+      address: sanitizeAddress(address),
+      amount: built.amount,
       paymentMethod: "COD",
       payment: false,
       date: Date.now(),
-    };
-
-    const newOrder = new orderModel(orderData);
+    });
     await newOrder.save();
-    // Send order confirmation email
-    const customerEmail = await getCustomerEmail(userId, newOrder.address);
-    if (newOrder.paymentMethod === "COD" && customerEmail) {
-      try {
-        await sendOrderConfirmationEmail({
-          to: customerEmail,
-          orderId: newOrder._id,
-          items: newOrder.items,
-          amount: newOrder.amount,
-          address: newOrder.address,
-          paymentMethod: newOrder.paymentMethod,
-        });
-      } catch (emailErr) {
-        console.error(
-          "Failed to send order confirmation email:",
-          emailErr.message
-        );
-      }
-    }
-    await userModel.findByIdAndUpdate(userId, { cartData: {} });
+    await decrementStock(built.items);
+    await clearUserCart(userId);
+    // Not awaited so the customer is not kept waiting on email / sheet
+    sendConfirmation(newOrder);
+    logOrderToSheet(newOrder, "Order Placed");
 
-    res.json({ success: true, message: "Order Placed Successfully" });
+    res.json({ success: true, message: "Order Placed Successfully", orderId: newOrder._id, amount: built.amount });
   } catch (error) {
-    console.log(error);
+    if (!(error instanceof OrderError)) console.log(error);
     res.json({ success: false, message: error.message });
   }
 };
 
 // Creating pending order for Payhere payment
-// Creating pending order for Payhere payment
 const createPendingOrder = async (req, res) => {
   try {
-    const { userId, items, amount, address } = req.body;
+    const { userId, items: rawItems, address } = req.body;
+    const built = await buildOrderFromCart(rawItems);
 
-    const orderData = {
+    const newOrder = new orderModel({
       userId,
-      items,
-      address,
-      amount,
+      items: built.items,
+      address: sanitizeAddress(address),
+      amount: built.amount,
       paymentMethod: "Payhere",
       payment: false,
       status: "Pending Payment",
       date: Date.now(),
-    };
-
-    const newOrder = new orderModel(orderData);
+    });
     await newOrder.save();
+    logOrderToSheet(newOrder, "Pending Payment");
 
-    //await userModel.findByIdAndUpdate(userId, {cartData: {}})
-
-    // Generate the PayHere hash following their specifications
-    // First hash the merchant secret
     const hashedSecret = crypto
       .createHash("md5")
       .update(PAYHERE_MERCHANT_SECRET)
       .digest("hex")
       .toUpperCase();
 
-    // Format amount to ensure it has 2 decimal places
-    const amountFormatted = parseFloat(amount)
-      .toLocaleString("en-us", { minimumFractionDigits: 2 })
+    const amountFormatted = built.amount
+      .toLocaleString("en-us", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       .replaceAll(",", "");
 
-    const currency = "LKR"; // Set your default currency
-
-    // Create the final hash
+    const currency = "LKR";
     const hash = crypto
       .createHash("md5")
-      .update(
-        PAYHERE_MERCHANT_ID +
-          newOrder._id +
-          amountFormatted +
-          currency +
-          hashedSecret
-      )
+      .update(PAYHERE_MERCHANT_ID + newOrder._id + amountFormatted + currency + hashedSecret)
       .digest("hex")
       .toUpperCase();
 
-    // Return order ID, PayHere merchant ID, and hash for frontend processing
     res.json({
       success: true,
       message: "Order Created Successfully",
       orderId: newOrder._id,
       merchantId: PAYHERE_MERCHANT_ID,
-      hash: hash,
-      currency: currency,
+      hash,
+      currency,
+      amount: built.amount,
       sandbox: PAYHERE_SANDBOX,
     });
   } catch (error) {
-    console.log(error);
+    if (!(error instanceof OrderError)) console.log(error);
     res.json({ success: false, message: error.message });
   }
 };
@@ -209,6 +293,7 @@ const payhereNotify = async (req, res) => {
     if (status_code === "2") {
       // Payment successful
       // Update order status and payment info
+      const wasPending = order.status === "Pending Payment";
       await orderModel.findByIdAndUpdate(order_id, {
         status: "Order Placed",
         payment: true,
@@ -216,28 +301,11 @@ const payhereNotify = async (req, res) => {
         paymentDetails: req.body,
       });
 
-      // Clear cart after successful payment
-      await userModel.findByIdAndUpdate(order.userId, { cartData: {} });
-
-      // Send order confirmation email
-      const customerEmail = await getCustomerEmail(order.userId, order.address);
-      if (customerEmail) {
-        try {
-          await sendOrderConfirmationEmail({
-            to: customerEmail,
-            orderId: order._id,
-            items: order.items,
-            amount: order.amount,
-            address: order.address,
-            paymentMethod: order.paymentMethod,
-          });
-        } catch (emailErr) {
-          console.error(
-            "Failed to send order confirmation email:",
-            emailErr.message
-          );
-        }
-      }
+      // Stock is reduced only once, when the payment is first confirmed
+      if (wasPending) await decrementStock(order.items);
+      await clearUserCart(order.userId);
+      sendConfirmation(order);
+      logOrderToSheet(order, "Order Placed (Paid)");
 
       return res.json({
         success: true,

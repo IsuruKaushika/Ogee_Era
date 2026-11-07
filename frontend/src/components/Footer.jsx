@@ -1,189 +1,76 @@
-import React from "react";
+import { Link } from "react-router-dom";
 import { assets } from "../assets/assets";
+import { useSettings } from "../context/SettingsContext";
+import Logo from "./Logo";
+
+const Col = ({ title, links }) => (
+  <div>
+    <p className="text-sm font-medium mb-4">{title}</p>
+    <ul className="space-y-2 text-[13px] text-ink/70">
+      {links.map(([label, to]) => (
+        <li key={label}><Link to={to} className="hover:text-ink">{label}</Link></li>
+      ))}
+    </ul>
+  </div>
+);
+
+const Social = ({ href, label, children }) =>
+  href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="text-ink/70 hover:text-ink">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+    </a>
+  ) : null;
+
+const Pay = ({ children }) => <span className="border border-stone bg-white px-2.5 py-1 text-[11px] tracking-wide text-ink/70">{children}</span>;
 
 const Footer = () => {
+  const { business, social } = useSettings();
   return (
-    <div>
-      <div className="flex flex-col sm:grid grid-cols-[3fr_1fr_1fr] gap-14 my-10 mt-30 text-sm">
+    <footer className="bg-ivory">
+      <div className="container-x pt-12 pb-8 grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr]">
         <div>
-          <img
-            src={assets.logo}
-            className="mb-5 w-32"
-            alt="Ogiera Logo"
-            width="128"
-            height="128"
-            loading="lazy"
-            decoding="async"
-          />
-          <p className="w-full md:w-2/3 text-gray-600">
-            Hurry, Shop Now and Embrace the Essence of Ogee's Unique Style!
-          </p>
+          <Logo className="h-20" />
+          {business.tagline && <p className="mt-3 text-[13px] text-ink/70 max-w-[240px] leading-relaxed">{business.tagline}</p>}
+          <div className="flex gap-4 mt-5">
+            <Social href={social.instagram} label="Instagram">
+              <rect x="2" y="2" width="20" height="20" rx="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+            </Social>
+            <Social href={social.facebook} label="Facebook"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></Social>
+            <Social href={social.tiktok} label="TikTok"><path d="M9 12a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" /><path d="M15 8h.01" /><path d="M15 2h-2a4 4 0 0 0-4 4v12" /><path d="M19 8a4 4 0 0 0-4-4" /></Social>
+          </div>
         </div>
-        <div>
-          <p className="text-xl font-medium mb-5">COMPANY</p>
-          <ul className="flex flex-col gap-1 text-gray-600">
-            <li>
-              <a href="/" className="hover:text-gray-900 transition-colors">
-                Home
-              </a>
-            </li>
-            <li>
-              <a
-                href="/about"
-                className="hover:text-gray-900 transition-colors"
-              >
-                About Us
-              </a>
-            </li>
-            <li>
-              <a
-                href="/terms-and-conditions"
-                className="hover:text-gray-900 transition-colors"
-              >
-                Terms and Conditions
-              </a>
-            </li>
-            <li>
-              <a
-                href="/privacy-and-policy"
-                className="hover:text-gray-900 transition-colors"
-              >
-                Privacy Policy
-              </a>
-            </li>
-            <li>
-              <a href="/faq" className="hover:text-gray-900 transition-colors">
-                FAQ
-              </a>
-            </li>
-            <li>
-              <a
-                href="/return-policy"
-                className="hover:text-gray-900 transition-colors"
-              >
-                Return Policy
-              </a>
-            </li>
 
-            <li>
-              <a
-                href="/contact"
-                className="hover:text-gray-900 transition-colors"
-              >
-                Contact Us
-              </a>
-            </li>
+        <Col title="Shop" links={[["New In", "/collection"], ["Dresses", "/category/dresses"], ["Tops", "/category/tops"], ["Lungi & Sarong", "/category/sarongs"], ["Sarees", "/category/sarees"], ["Men", "/category/men"], ["Sale", "/collection?offers=1"]]} />
+        <Col title="Customer Care" links={[["Track Order", "/orders"], ["Returns & Exchanges", "/return-policy"], ["Delivery & Payment", "/faq"], ["FAQ", "/faq"], ["Contact Us", "/contact"]]} />
+        <Col title="About" links={[["Our Story", "/about"], ["Terms & Conditions", "/terms-and-conditions"], ["Privacy Policy", "/privacy-and-policy"]]} />
+
+        <div>
+          <p className="text-sm font-medium mb-4">Get in touch</p>
+          <ul className="space-y-2 text-[13px] text-ink/70">
+            {business.whatsapp && (
+              <li><a className="hover:text-ink" href={`https://wa.me/${business.whatsapp}`} target="_blank" rel="noopener noreferrer">WhatsApp {business.phone || `+${business.whatsapp}`}</a></li>
+            )}
+            {!business.whatsapp && business.phone && <li><a className="hover:text-ink" href={`tel:${business.phone.replace(/\s/g, "")}`}>{business.phone}</a></li>}
+            {business.email && <li><a className="hover:text-ink" href={`mailto:${business.email}`}>{business.email}</a></li>}
+            {business.address && <li>{business.address}</li>}
+            {business.hours && <li className="text-ink/55">{business.hours}</li>}
           </ul>
         </div>
-        <div>
-          <p className="text-xl font-medium mb-5">GET IN TOUCH</p>
+      </div>
 
-          <div className="flex gap-4 mt-6">
-            {/* Facebook Icon */}
-            <a
-              href="https://www.facebook.com/share/1BZtCgfBgd/?mibextid=wwXIfr"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Facebook"
-              className="text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-              </svg>
-            </a>
-            {/* Instagram Icon */}
-            <a
-              href="https://www.instagram.com/ogee_era?igsh=MTI0aG94cG5rMGQxMA=="
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="text-gray-600 hover:text-pink-600 transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-              </svg>
-            </a>
-
-            {/* TikTok Icon */}
-            <a
-              href="https://www.tiktok.com/@0gee_era?_t=ZS-8vqiO4zOGkK&_r=1"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="TikTok"
-              className="text-gray-600 hover:text-black transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M9 12a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path>
-                <path d="M15 8h.01"></path>
-                <path d="M15 2h-2a4 4 0 0 0-4 4v12"></path>
-                <path d="M19 8a4 4 0 0 0-4-4"></path>
-              </svg>
-            </a>
+      <div className="border-t border-stone/60">
+        <div className="container-x py-5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-ink/60">
+          <p>&copy; {new Date().getFullYear()} {business.name}. All rights reserved.</p>
+          <div className="flex items-center gap-2" aria-label="Accepted payment methods">
+            <Pay>Cash on Delivery</Pay><Pay>VISA</Pay><Pay>Mastercard</Pay><Pay>PayHere</Pay>
           </div>
+          <a href="https://www.cigmalabs.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+            <span>Powered by</span>
+            <img src={assets.company} alt="Cigma Labs" className="h-4 w-auto" width="107" height="20" loading="lazy" />
+          </a>
         </div>
       </div>
-      <div>
-        <hr />
-        <div className="flex justify-between items-center py-5 pr-16 sm:pr-4">
-          <p className="text-sm text-center flex-1">
-            Copyright 2026@ OgeeEra.lk - All Rights Reserved.
-          </p>
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-xs text-gray-600">Powered by</span>
-            <a
-              href="https://www.cigmalabs.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src={assets.company}
-                alt="Company Logo"
-                className="h-5 w-auto hover:opacity-80 transition-opacity cursor-pointer"
-                width="187"
-                height="35"
-                loading="lazy"
-                decoding="async"
-              />
-            </a>
-          </div>
-        </div>
-      </div>
-      <div>
-        <hr />
-      </div>
-    </div>
+    </footer>
   );
 };
 

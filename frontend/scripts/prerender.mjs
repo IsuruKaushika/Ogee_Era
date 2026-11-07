@@ -6,7 +6,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { FAQ_GROUPS, buildFaqSchema } from "../src/data/faqs.js";
+import { buildFaqGroups, buildFaqSchema } from "../src/data/faqs.js";
+import { DEFAULT_SETTINGS, mergeSettings } from "../src/config/siteDefaults.js";
+import { CATEGORIES } from "../src/data/categories.js";
 
 const SITE_URL = "https://www.ogeeera.lk";
 const SITE_NAME = "OgeeEra";
@@ -17,16 +19,16 @@ const PAGES = {
   "/": {
     title: "",
     description:
-      "OgeeEra is a Sri Lankan fashion store for women, men, and kids. Shop trending clothing with secure checkout, islandwide delivery, and easy returns.",
+      "OgeeEra is a Sri Lankan fashion store for women and men. Shop dresses, tops, sarongs and sarees with islandwide delivery, cash on delivery and easy 7-day returns.",
   },
   "/collection": {
-    title: "Shop Women's, Men's & Kids' Fashion",
+    title: "Shop Women's & Men's Fashion",
     description:
-      "Browse the full OgeeEra collection of women's, men's and kids' clothing in Sri Lanka. Islandwide delivery and easy returns.",
+      "Browse the full OgeeEra collection of women's and men's clothing in Sri Lanka. Islandwide delivery and easy returns.",
   },
   "/about": {
     title: "About Us",
-    description: "Learn about OgeeEra, a Sri Lankan online fashion store for the whole family.",
+    description: "Learn about OgeeEra, a Sri Lankan online fashion store for women and men.",
   },
   "/contact": {
     title: "Contact Us",
@@ -51,34 +53,41 @@ const PAGES = {
   },
 };
 
-const organizationSchema = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "Organization",
-      "@id": `${SITE_URL}/#organization`,
-      name: SITE_NAME,
-      alternateName: ["Ogee Era", "ogeeera", "ogeeera.lk"],
-      url: SITE_URL,
-      logo: `${SITE_URL}/logo.png`,
-      telephone: "+94712205395",
-      sameAs: [
-        "https://www.facebook.com/share/1BZtCgfBgd/",
-        "https://www.instagram.com/ogee_era",
-        "https://www.tiktok.com/@0gee_era",
-      ],
-      areaServed: { "@type": "Country", name: "Sri Lanka" },
-    },
-    {
-      "@type": "WebSite",
-      "@id": `${SITE_URL}/#website`,
-      url: SITE_URL,
-      name: SITE_NAME,
-      alternateName: ["Ogee Era", "ogeeera", "ogeeera.lk"],
-      inLanguage: "en-LK",
-      publisher: { "@id": `${SITE_URL}/#organization` },
-    },
-  ],
+for (const [slug, c] of Object.entries(CATEGORIES)) {
+  PAGES[`/category/${slug}`] = { title: c.title, description: c.description, intro: c.intro };
+}
+
+let SETTINGS = DEFAULT_SETTINGS;
+let FAQ_GROUPS = buildFaqGroups(SETTINGS);
+
+const organizationSchema = () => {
+  const { business, social } = SETTINGS;
+  const phone = business.whatsapp ? `+${business.whatsapp}` : business.phone;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: business.name || SITE_NAME,
+        alternateName: ["Ogee Era", "ogeeera", "ogeeera.lk"],
+        url: SITE_URL,
+        logo: `${SITE_URL}/logo.png`,
+        ...(phone ? { telephone: phone } : {}),
+        sameAs: [social.facebook, social.instagram, social.tiktok].filter(Boolean),
+        areaServed: { "@type": "Country", name: "Sri Lanka" },
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        url: SITE_URL,
+        name: business.name || SITE_NAME,
+        alternateName: ["Ogee Era", "ogeeera", "ogeeera.lk"],
+        inLanguage: "en-LK",
+        publisher: { "@id": `${SITE_URL}/#organization` },
+      },
+    ],
+  };
 };
 
 const esc = (s) =>
@@ -136,9 +145,22 @@ try {
   const templatePath = path.join(dist, "index.html");
   if (!fs.existsSync(templatePath)) throw new Error("dist/index.html not found (run vite build first)");
   const template = fs.readFileSync(templatePath, "utf8");
+  try {
+    const be = readEnv().VITE_BACKEND_URL;
+    if (be) {
+      const r = await (await fetch(`${be.replace(/\/$/, "")}/api/settings`)).json();
+      if (r.success) {
+        SETTINGS = mergeSettings(DEFAULT_SETTINGS, r.settings);
+        FAQ_GROUPS = buildFaqGroups(SETTINGS);
+      }
+    }
+  } catch (e) {
+    console.warn(`[prerender] Using default settings (${e.message}).`);
+  }
   const nav =
     `<nav><a href="/">Home</a> <a href="/collection">Collection</a> <a href="/about">About</a> <a href="/faq">FAQ</a>` +
-    `<a href="/contact">Contact</a> <a href="/return-policy">Return policy</a></nav>`;
+    `<a href="/contact">Contact</a> <a href="/return-policy">Return policy</a>` +
+    Object.entries(CATEGORIES).map(([slug, c]) => ` <a href="/category/${slug}">${c.label}</a>`).join("") + `</nav>`;
 
   let count = 0;
   for (const [urlPath, page] of Object.entries(PAGES)) {
@@ -151,9 +173,9 @@ try {
         urlPath,
         image: `${SITE_URL}/logo.png`,
         type: "website",
-        schemas: urlPath === "/" ? [organizationSchema] : urlPath === "/faq" ? [buildFaqSchema()] : [],
+        schemas: urlPath === "/" ? [organizationSchema()] : urlPath === "/faq" ? [buildFaqSchema(FAQ_GROUPS)] : [],
         body:
-          `${nav}<h1>${esc(heading)}</h1><p>${esc(page.description)}</p>` +
+          `${nav}<h1>${esc(heading)}</h1><p>${esc(page.description)}</p>` + (page.intro ? `<p>${esc(page.intro)}</p>` : "") +
           (urlPath === "/faq"
             ? FAQ_GROUPS.flatMap((g) => g.items)
                 .map((i) => `<h2>${esc(i.q)}</h2><p>${esc(i.a)}</p>`)

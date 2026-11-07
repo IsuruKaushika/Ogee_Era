@@ -1,60 +1,46 @@
-import React, { useState } from 'react'
-import emailjs from '@emailjs/browser'
+import { useContext, useState } from "react";
+import axios from "axios";
+import { ShopContext } from "../context/ShopContext";
+import { useSettings } from "../context/SettingsContext";
 
+// Subscribers are saved in the database (viewable by admin), not just emailed once.
 const NewsLetterBox = () => {
-  const [email, setEmail] = useState('')
-  const [status, setStatus] = useState('')
-  const [error, setError] = useState('')
+  const { backendUrl } = useContext(ShopContext);
+  const { newsletter } = useSettings();
+  const [email, setEmail] = useState("");
+  const [msg, setMsg] = useState({ type: "", text: "" });
+  const [busy, setBusy] = useState(false);
 
-  const onSubmitHandler = (event) => {
-    event.preventDefault()
-
-    const templateParams = {
-      email: email, // Must match variable name in your EmailJS template
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const { data } = await axios.post(`${backendUrl}/api/newsletter/subscribe`, { email, source: "homepage" });
+      setMsg({ type: data.success ? "ok" : "err", text: data.message });
+      if (data.success) setEmail("");
+    } catch {
+      setMsg({ type: "err", text: "Could not subscribe right now. Please try again." });
     }
-
-    console.log("Sending email with params:", templateParams)
-
-    emailjs.send(
-      'service_8z22ypm',       // Your EmailJS service ID
-      'template_yycmbkq',      // Your EmailJS template ID
-      templateParams,
-      'QrrSb4PfdwR9On26Z'      // Your EmailJS public key
-    )
-    .then((response) => {
-      console.log('SUCCESS!', response.status, response.text)
-      setStatus('🎉 Subscribed successfully!')
-      setEmail('')
-      setError('')
-    })
-    .catch((error) => {
-      console.error('FAILED...', error)
-      setStatus('')
-      setError('❌ Failed to subscribe. Please try again.')
-    })
-  }
+    setBusy(false);
+  };
 
   return (
-    <div className='text-center'>
-      <p className='text-2xl font-medium text-gray-800'>Subscribe Now to Our Newsletter</p>
-      <p className='text-gray-400 mt-3'>
-        Get E-mail updates about our latest shop and special offers.
-      </p>
-      <form onSubmit={onSubmitHandler} className='w-full sm:w-1/2 flex items-center gap-3 mx-auto my-6 border pl-3'>
-        <input
-          className='w-full sm:flex-1 outline-none'
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder='Enter Your Email'
-          required
-        />
-        <button type='submit' className='bg-black text-white text-xs px-10 py-4'>SUBSCRIBE</button>
-      </form>
-      {status && <p className='text-sm text-green-600 mt-2'>{status}</p>}
-      {error && <p className='text-sm text-red-600 mt-2'>{error}</p>}
-    </div>
-  )
-}
+    <section className="bg-sand">
+      <div className="container-x py-10 md:py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div>
+          <h2 className="font-display text-3xl">{newsletter.title}</h2>
+          <p className="mt-1 text-sm text-ink/70">{newsletter.text}</p>
+        </div>
+        <div className="md:w-[460px]">
+          <form onSubmit={submit} className="flex">
+            <input className="field flex-1 border-r-0" type="email" required placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email address" />
+            <button type="submit" disabled={busy} className="btn-dark">{busy ? "..." : "Subscribe"}</button>
+          </form>
+          {msg.text && <p className={`mt-2 text-sm ${msg.type === "ok" ? "text-green-700" : "text-red-700"}`}>{msg.text}</p>}
+        </div>
+      </div>
+    </section>
+  );
+};
 
-export default NewsLetterBox
+export default NewsLetterBox;

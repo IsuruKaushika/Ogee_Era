@@ -1,5 +1,9 @@
 import {v2 as cloudinary} from "cloudinary"
 import productModel from "../models/productModel.js"
+import { statusFromStock } from "../config/shop.js"
+
+// "" / undefined / null = do not track units
+const parseStock = (v) => (v === undefined || v === null || v === "" ? null : Math.max(0, Math.floor(Number(v))))
 
 //add product
 const addProduct = async(req, res) => {
@@ -12,7 +16,9 @@ const addProduct = async(req, res) => {
             subCategory, 
             sizes, 
             bestseller,
-            stockStatus // New field
+            stockStatus, // New field
+            stock,
+            discount
         } = req.body;
 
         const image1 = req.files.image1 && req.files.image1[0]
@@ -47,7 +53,9 @@ const addProduct = async(req, res) => {
             bestseller: bestseller === "true" ? true : false,
             image: imagesUrl,
             date: Date.now(),
-            stockStatus: stockStatus || 'In Stock', // Set default if not provided
+            discount: discount ? Number(discount) : undefined,
+            stock: parseStock(stock),
+            stockStatus: parseStock(stock) !== null ? statusFromStock(parseStock(stock)) : (stockStatus || 'In Stock'),
             sizeChart: sizeChartUrl // Add size chart URL
         }
         console.log(productData)
@@ -75,7 +83,9 @@ const updateProduct = async (req, res) => {
       subCategory,
       sizes,
       bestseller,
-      discount
+      discount,
+      stock,
+      stockStatus
     } = req.body;
 
     const product = await productModel.findById(id);
@@ -118,6 +128,13 @@ const updateProduct = async (req, res) => {
     product.image = updatedImages;
     if (discount !== undefined) {
       product.discount = Number(discount);
+    }
+    if (stock !== undefined) {
+      product.stock = parseStock(stock);
+      if (product.stock !== null) product.stockStatus = statusFromStock(product.stock);
+    }
+    if (stockStatus && (product.stock === null || product.stock === undefined)) {
+      product.stockStatus = stockStatus;
     }
 
     await product.save();
