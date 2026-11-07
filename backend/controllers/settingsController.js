@@ -54,6 +54,11 @@ const cleaners = {
     primaryLink: link(v.primaryLink),
     secondaryLabel: str(v.secondaryLabel, 40),
     secondaryLink: link(v.secondaryLink),
+    productCtaLabel: str(v.productCtaLabel, 40),
+    quotes: (Array.isArray(v.quotes) ? v.quotes : [])
+      .slice(0, 10)
+      .map((q) => ({ title: str(q.title, 120), subtitle: str(q.subtitle, 300) }))
+      .filter((q) => q.title),
     slides: (Array.isArray(v.slides) ? v.slides : [])
       .slice(0, 8)
       .map((s) => ({

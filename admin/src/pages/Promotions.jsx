@@ -44,6 +44,7 @@ const Promotions = ({ token }) => {
 
   const set = (key, field) => (v) => patch(key, { ...s[key], [field]: v });
   const slides = s.hero.slides;
+  const setQuotes = (next) => patch("hero", { ...s.hero, quotes: next });
   const setSlides = (next) => patch("hero", { ...s.hero, slides: next });
   const editSlide = (i, field, v) => setSlides(slides.map((x, n) => (n === i ? { ...x, [field]: v } : x)));
   const move = (arr, i, d) => {
@@ -80,6 +81,29 @@ const Promotions = ({ token }) => {
           <Input label="Second link text" value={s.hero.secondaryLabel} onChange={set("hero", "secondaryLabel")} max={40} />
           <Input label="Second link" value={s.hero.secondaryLink} onChange={set("hero", "secondaryLink")} list="links" />
         </div>
+        <p className="text-sm font-medium mb-1">Quotes for best-seller slides</p>
+        <p className="text-xs text-gray-400 mb-3">
+          With no uploaded slides below, the banner loops through your popular products (items marked as Best Seller) and shows these quotes in turn,
+          one per picture. Add as many as you like (up to 10).
+        </p>
+        {s.hero.quotes.map((q, i) => (
+          <div key={i} className="border p-3 mb-2 rounded bg-gray-50 grid gap-2">
+            <Input label={`Quote ${i + 1}`} value={q.title} onChange={(v) => setQuotes(s.hero.quotes.map((x, n) => (n === i ? { ...x, title: v } : x)))} max={120} />
+            <Input label="Text under the quote" value={q.subtitle} onChange={(v) => setQuotes(s.hero.quotes.map((x, n) => (n === i ? { ...x, subtitle: v } : x)))} max={300} />
+            <div className="flex gap-4 text-xs">
+              <button type="button" className="underline" onClick={() => setQuotes(move(s.hero.quotes, i, -1))}>Move up</button>
+              <button type="button" className="underline" onClick={() => setQuotes(move(s.hero.quotes, i, 1))}>Move down</button>
+              <button type="button" className="underline text-red-600" onClick={() => setQuotes(s.hero.quotes.filter((_, n) => n !== i))}>Delete</button>
+            </div>
+          </div>
+        ))}
+        {s.hero.quotes.length < 10 && (
+          <button type="button" className="px-4 py-2 border bg-white mb-2" onClick={() => setQuotes([...s.hero.quotes, { title: "", subtitle: "" }])}>+ Add quote</button>
+        )}
+        <div className="max-w-xs mb-6">
+          <Input label="Button text on best-seller slides" value={s.hero.productCtaLabel} onChange={set("hero", "productCtaLabel")} max={40} hint="The button opens that product's page." />
+        </div>
+
         <p className="text-sm font-medium mb-1">Slides</p>
         <p className="text-xs text-gray-400 mb-3">Upload your own pictures to control exactly what shows. With no slides, the site rotates photos of your best-selling products using the headline above.</p>
         {slides.map((sl, i) => (
