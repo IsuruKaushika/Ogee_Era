@@ -92,15 +92,21 @@ const sanitizeAddress = (a = {}) => {
 };
 
 // Reduce managed stock once an order is confirmed (COD placed, or PayHere paid).
-const decrementStock = async (items) => {
+// One atomic update per product, so two simultaneous orders cannot both take the last item.
+const adjustStock = async (items, direction) => {
   for (const it of items) {
-    const p = await productModel.findById(it._id);
-    if (!p || typeof p.stock !== "number") continue;
-    p.stock = Math.max(0, p.stock - Number(it.quantity || 0));
-    p.stockStatus = statusFromStock(p.stock);
-    await p.save();
+    const qty = Number(it.quantity || 0) * direction;
+    if (!qty) continue;
+    const p = await productModel.findOneAndUpdate(
+      { _id: it._id, stock: { $type: "number" } },
+      [{ $set: { stock: { $max: [0, { $subtract: ["$stock", qty] }] } } }],
+      { new: true },
+    );
+    if (p) await productModel.updateOne({ _id: p._id }, { stockStatus: statusFromStock(p.stock) });
   }
 };
+const decrementStock = (items) => adjustStock(items, 1);
+const restoreStock = (items) => adjustStock(items, -1);
 
 // Mirror each order to the Google Sheet from the server so it is never lost when a customer closes
 // the browser. The URL is set in the admin panel (Settings) or GOOGLE_SHEET_URL; skipped if neither is set.
@@ -289,6 +295,15 @@ const payhereNotify = async (req, res) => {
         .json({ success: false, message: "Order not found" });
     }
 
+    // The paid amount must match what we charged for this order
+    if (
+      status_code === "2" &&
+      (Math.abs(Number(payhere_amount) - Number(order.amount)) > 0.01 || req.body.payhere_currency !== "LKR")
+    ) {
+      console.error(`PayHere amount mismatch for order ${order_id}: got ${payhere_amount} ${req.body.payhere_currency}, expected ${order.amount} LKR`);
+      return res.status(400).json({ success: false, message: "Amount mismatch" });
+    }
+
     // Update based on status code
     if (status_code === "2") {
       // Payment successful
@@ -297,6 +312,7 @@ const payhereNotify = async (req, res) => {
       await orderModel.findByIdAndUpdate(order_id, {
         status: "Order Placed",
         payment: true,
+        paidAt: order.paidAt || Date.now(),
         paymentId: payment_id,
         paymentDetails: req.body,
       });
@@ -312,7 +328,8 @@ const payhereNotify = async (req, res) => {
         message: "Payment verified and order updated",
       });
     } else {
-      // Payment failed
+      // Payment failed (ignored if the order was already paid)
+      if (order.payment) return res.json({ success: true, message: "Order already paid" });
       await orderModel.findByIdAndUpdate(order_id, {
         status: "Failed",
         paymentId: payment_id,
@@ -414,11 +431,40 @@ const userOrders = async(req, res) => {
     }
 }
 
+const ORDER_STATUSES = ["Order Placed", "Packing", "Delivered", "Cancelled"];
+
 // Update order status from admin
 const updateStatus = async(req, res) => {
     try {
         const {orderId, status} = req.body;
-        await orderModel.findByIdAndUpdate(orderId, {status})
+        if (!ORDER_STATUSES.includes(status)) {
+            return res.json({success: false, message: "Invalid status"});
+        }
+        const order = await orderModel.findById(orderId);
+        if (!order) return res.json({success: false, message: "Order not found"});
+
+        const update = {status};
+        // Cash on delivery is paid when the parcel is handed over
+        if (status === "Delivered" && order.paymentMethod === "COD" && !order.payment) {
+            update.payment = true;
+            update.paidAt = Date.now();
+        }
+        // Moving a COD order back from Delivered means the cash was not collected after all
+        if (status !== "Delivered" && order.paymentMethod === "COD" && order.status === "Delivered") {
+            update.payment = false;
+            update.paidAt = null;
+        }
+        // Cancelling a confirmed order puts its stock back (once)
+        if (status === "Cancelled" && !order.stockReleased && (order.paymentMethod === "COD" || order.payment)) {
+            await restoreStock(order.items);
+            update.stockReleased = true;
+        }
+        // Re-opening a cancelled order takes the stock again
+        if (status !== "Cancelled" && order.status === "Cancelled" && order.stockReleased) {
+            await decrementStock(order.items);
+            update.stockReleased = false;
+        }
+        await orderModel.findByIdAndUpdate(orderId, update);
         res.json({success: true, message: "Order Status Updated Successfully"})
     } catch(error) {
         console.log(error)
@@ -426,29 +472,102 @@ const updateStatus = async(req, res) => {
     }
 }
 
-// Delete order from admin
+// Orders are a permanent record (needed for income reports and accounts), so they are never deleted.
+// Use the Cancelled status instead.
 const deleteOrder = async(req, res) => {
-    try {
-        const {orderId, orderIds} = req.body;
-        
-        if (orderIds && Array.isArray(orderIds)) {
-            await orderModel.deleteMany({ _id: { $in: orderIds } });
-            return res.json({ success: true, message: "Orders deleted successfully" });
-        }
+    res.json({success: false, message: "Orders are kept permanently and cannot be deleted. Set the status to Cancelled instead."});
+}
 
-        // Check if order exists
-        const order = await orderModel.findById(orderId);
-        if (!order) {
-            return res.json({success: false, message: "Order not found"});
+// ---- Income / sales report ----
+const LK_OFFSET_MS = 5.5 * 60 * 60 * 1000; // report days follow Sri Lanka time
+const dayKey = (ms) => new Date(ms + LK_OFFSET_MS).toISOString().slice(0, 10);
+const round2 = (n) => Math.round(n * 100) / 100;
+const unitPrice = (it) => Number(it.discount) > 0 ? Number(it.price) * (1 - Number(it.discount) / 100) : Number(it.price || 0);
+
+// Everything the admin Reports page shows. Optional body: { from: "YYYY-MM-DD", to: "YYYY-MM-DD" } (inclusive).
+const orderReport = async (req, res) => {
+    try {
+        const { from, to } = req.body || {};
+        const range = {};
+        if (from) range.$gte = Date.parse(`${from}T00:00:00+05:30`);
+        if (to) range.$lte = Date.parse(`${to}T23:59:59.999+05:30`);
+        const filter = { ...REAL_ORDERS_FILTER };
+        if (Object.keys(range).length) filter.date = range;
+
+        const orders = await orderModel.find(filter).sort({ date: 1 }).lean();
+
+        const active = orders.filter((o) => !["Cancelled", "Failed", "Pending Payment"].includes(o.status));
+        const cancelled = orders.filter((o) => o.status === "Cancelled");
+
+        const sum = (list, f) => round2(list.reduce((t, o) => t + f(o), 0));
+        const itemsTotal = (o) => (o.items || []).reduce((t, it) => t + unitPrice(it) * Number(it.quantity || 0), 0);
+
+        const revenue = sum(active, (o) => o.amount);
+        const summary = {
+            orders: active.length,
+            revenue,                                                                      // all confirmed orders, incl. delivery fees
+            productSales: sum(active, itemsTotal),                                        // items only
+            deliveryFees: sum(active, (o) => Math.max(0, Number(o.amount) - itemsTotal(o))),
+            collected: sum(active.filter((o) => o.payment), (o) => o.amount),             // money actually received
+            outstanding: sum(active.filter((o) => !o.payment), (o) => o.amount),          // COD not yet delivered / paid
+            itemsSold: active.reduce((t, o) => t + (o.items || []).reduce((n, it) => n + Number(it.quantity || 0), 0), 0),
+            averageOrder: active.length ? round2(revenue / active.length) : 0,
+            cancelledOrders: cancelled.length,
+            cancelledValue: sum(cancelled, (o) => o.amount),
+            customers: new Set(active.map((o) => (o.address?.email || o.address?.phone || o.userId || "").toLowerCase())).size,
+        };
+
+        const group = (list, keyFn) => {
+            const m = {};
+            for (const o of list) {
+                const k = keyFn(o) || "Unknown";
+                m[k] = m[k] || { key: k, orders: 0, revenue: 0, collected: 0 };
+                m[k].orders += 1;
+                m[k].revenue += Number(o.amount || 0);
+                if (o.payment) m[k].collected += Number(o.amount || 0);
+            }
+            return Object.values(m).map((r) => ({ ...r, revenue: round2(r.revenue), collected: round2(r.collected) }));
+        };
+
+        const byDay = group(active, (o) => dayKey(o.date)).sort((a, b) => a.key.localeCompare(b.key));
+        const byMonth = group(active, (o) => dayKey(o.date).slice(0, 7)).sort((a, b) => a.key.localeCompare(b.key));
+        const byMethod = group(active, (o) => o.paymentMethod).sort((a, b) => b.revenue - a.revenue);
+        const byDistrict = group(active, (o) => o.address?.state).sort((a, b) => b.revenue - a.revenue).slice(0, 15);
+        const byStatus = group(orders, (o) => o.status).sort((a, b) => b.orders - a.orders);
+
+        const prod = {};
+        for (const o of active) {
+            for (const it of o.items || []) {
+                const k = String(it._id || it.name);
+                prod[k] = prod[k] || { name: it.name || "Unnamed", quantity: 0, revenue: 0 };
+                prod[k].quantity += Number(it.quantity || 0);
+                prod[k].revenue += unitPrice(it) * Number(it.quantity || 0);
+            }
         }
-        
-        // Delete the order
-        await orderModel.findByIdAndDelete(orderId);
-        
-        res.json({success: true, message: "Order deleted successfully"});
-    } catch(error) {
+        const topProducts = Object.values(prod)
+            .map((p) => ({ ...p, revenue: round2(p.revenue) }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 15);
+
+        // One row per order for the table and CSV export (newest first)
+        const rows = [...orders].reverse().map((o) => ({
+            id: String(o._id),
+            date: o.date,
+            customer: `${o.address?.firstName || ""} ${o.address?.lastName || ""}`.trim(),
+            phone: o.address?.phone || "",
+            email: o.address?.email || "",
+            district: o.address?.state || "",
+            items: (o.items || []).map((i) => `${i.name} (${i.size}) x${i.quantity}`).join("; "),
+            method: o.paymentMethod,
+            paid: !!o.payment,
+            status: o.status,
+            amount: Number(o.amount || 0),
+        }));
+
+        res.json({ success: true, summary, byDay, byMonth, byMethod, byDistrict, byStatus, topProducts, rows });
+    } catch (error) {
         console.log(error);
-        res.json({success: false, message: error.message});
+        res.json({ success: false, message: error.message });
     }
 }
 
@@ -463,5 +582,6 @@ export {
     payhereSuccess,
     payhereFailure,
     cancelPendingOrder,
-    deleteOrder
+    deleteOrder,
+    orderReport
 }

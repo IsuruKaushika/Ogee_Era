@@ -17,6 +17,7 @@ import Transactions from "./pages/Transactions";
 import Reviews from "./pages/Reviews";
 import Promotions from "./pages/Promotions";
 import Settings from "./pages/Settings";
+import Reports from "./pages/Reports";
 
 import Login from "./components/Login";
 import { useState } from "react";
@@ -71,6 +72,7 @@ const App = () => {
                   path="/customers"
                   element={<Customers token={token} />}
                 />
+                <Route path="/reports" element={<Reports token={token} />} />
                 <Route path="/reviews" element={<Reviews token={token} />} />
                 <Route path="/promotions" element={<Promotions token={token} />} />
                 <Route path="/settings" element={<Settings token={token} />} />
