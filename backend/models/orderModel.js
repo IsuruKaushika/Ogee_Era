@@ -9,6 +9,8 @@ const orderSchema = new mongoose.Schema({
     paymentMethod: {type: String, required: true},
     payment: {type: Boolean, required: true, default: false},
     date: {type: Number, required: true},
+    paidAt: {type: Number}, // when payment was received (online) or cash collected (COD, on delivery)
+    stockReleased: {type: Boolean, default: false}, // true once a cancelled order has put its stock back
     
     // Fields for PayHere integration
     paymentId: {type: String}, // PayHere payment reference ID

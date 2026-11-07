@@ -464,7 +464,7 @@ const Home = ({ token }) => {
   const analytics = useMemo(() => {
     const validOrders = orders.filter(
       (order) =>
-        order.status !== "Failed" && order.status !== "Pending Payment",
+        order.status !== "Failed" && order.status !== "Pending Payment" && order.status !== "Cancelled",
     );
     const totalOrders = orders.filter(
       (order) =>

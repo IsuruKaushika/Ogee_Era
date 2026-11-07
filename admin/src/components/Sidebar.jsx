@@ -7,7 +7,7 @@ import { BsBoxSeam } from "react-icons/bs";
 import { FiPackage } from "react-icons/fi";
 import { TbTruckDelivery } from "react-icons/tb";
 import { HiOutlineCreditCard } from "react-icons/hi";
-import { FiStar, FiImage, FiSettings } from "react-icons/fi";
+import { FiStar, FiImage, FiSettings, FiBarChart2 } from "react-icons/fi";
 
 const Sidebar = () => {
   return (
@@ -75,6 +75,14 @@ const Sidebar = () => {
         >
           <HiOutlineCreditCard className="w-5 h-5 text-gray-700" />
           <p className="hidden md:block">Transactions</p>
+        </NavLink>
+
+        <NavLink
+          className="flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l"
+          to="/reports"
+        >
+          <FiBarChart2 className="w-5 h-5 text-gray-700" />
+          <p className="hidden md:block">Reports</p>
         </NavLink>
 
         <NavLink

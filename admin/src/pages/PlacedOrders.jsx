@@ -28,6 +28,7 @@ const PlacedOrders = ({ token }) => {
 
   const statusHandler = async (event, orderId) => {
     const newStatus = event.target.value
+    if (newStatus === 'Cancelled' && !window.confirm('Cancel this order? Its stock will be put back.')) return
     try {
       const response = await axios.post(backendUrl + '/api/order/status', 
         { orderId, status: newStatus }, 
@@ -125,6 +126,7 @@ const PlacedOrders = ({ token }) => {
                 <option value="Order Placed">Order Placed</option>
                 <option value="Packing">Packing</option>
                 <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
               </select>
             </div>
           ))

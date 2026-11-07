@@ -10,7 +10,8 @@ import {
   payhereSuccess,
   payhereFailure,
   cancelPendingOrder,
-  deleteOrder
+  deleteOrder,
+  orderReport
 } from '../controllers/orderController.js';
 import adminAuth from '../middleware/adminAuth.js';
 import authUser from '../middleware/auth.js';
@@ -21,6 +22,7 @@ const orderRouter = express.Router();
 //for admin
 orderRouter.post('/list', adminAuth, allOrders);
 orderRouter.post('/status', adminAuth, updateStatus);
+orderRouter.post('/report', adminAuth, orderReport);
 
 //payment
 orderRouter.post('/place', optionalAuth, placeOrder);
