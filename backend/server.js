@@ -10,6 +10,8 @@ import cartRouter from './routes/cartRoute.js';
 import orderRouter from './routes/orderRoute.js';
 import reviewRouter from './routes/reviewRoute.js';
 import newsletterRouter from './routes/newsletterRoute.js';
+import settingsRouter from './routes/settingsRoute.js';
+import contactRouter from './routes/contactRoute.js';
 
 //import routes
 
@@ -39,6 +41,8 @@ app.use('/api/cart', cartRouter)
 app.use('/api/order', orderRouter)
 app.use('/api/review', reviewRouter)
 app.use('/api/newsletter', newsletterRouter)
+app.use('/api/settings', settingsRouter)
+app.use('/api/contact', contactRouter)
 
 app.get('/', (req, res) => {
     res.send('API Working')

@@ -9,20 +9,25 @@ import CustomerReviews from "../components/CustomerReviews";
 import InstagramStrip from "../components/InstagramStrip";
 import NewsLetterBox from "../components/NewsLetterBox";
 import RevealOnScroll from "../components/RevealOnScroll";
+import { useSettings } from "../context/SettingsContext";
 
-const Home = () => (
-  <div>
-    <Hero />
-    <CategoryCircles />
-    <LatestCollection />
-    <RevealOnScroll delay={20}><PromoBanners /></RevealOnScroll>
-    <RevealOnScroll delay={30}><BestSeller /></RevealOnScroll>
-    <RevealOnScroll delay={30}><SpecialOffers /></RevealOnScroll>
-    <OurPolicy />
-    <CustomerReviews />
-    <InstagramStrip />
-    <NewsLetterBox />
-  </div>
-);
+// Which sections appear (and their text) is controlled from admin > Promotions.
+const Home = () => {
+  const { sections } = useSettings();
+  return (
+    <div>
+      <Hero />
+      {sections.categories && <CategoryCircles />}
+      {sections.newArrivals && <LatestCollection />}
+      {sections.promos && <RevealOnScroll delay={20}><PromoBanners /></RevealOnScroll>}
+      {sections.bestSellers && <RevealOnScroll delay={30}><BestSeller /></RevealOnScroll>}
+      {sections.specialOffers && <RevealOnScroll delay={30}><SpecialOffers /></RevealOnScroll>}
+      {sections.policyStrip && <OurPolicy />}
+      {sections.reviews && <CustomerReviews />}
+      {sections.instagram && <InstagramStrip />}
+      {sections.newsletter && <NewsLetterBox />}
+    </div>
+  );
+};
 
 export default Home;

@@ -6,7 +6,8 @@ import { ShopContext } from "../context/ShopContext";
 import { validatePlaceOrderForm, normalizePhone } from "../utils/validatePlaceOrderForm";
 import PlaceOrderSkeleton from "../components/PlaceOrderSkeleton";
 import CartTotal from "../components/CartTotal";
-import { SRI_LANKA_DISTRICTS } from "../config/site";
+import { SRI_LANKA_DISTRICTS } from "../data/districts";
+import { useSettings } from "../context/SettingsContext";
 import { formatPrice, finalPrice } from "../utils/format";
 import { trackPurchase } from "../utils/analytics";
 
@@ -22,6 +23,7 @@ const Field = ({ label, error, children }) => (
 
 const PlaceOrder = () => {
   const { navigate, backendUrl, token, cartItems, setCartItems, products, isProductsLoading, getCartTotal } = useContext(ShopContext);
+  const { commerce } = useSettings();
   const [method, setMethod] = useState("cod");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -158,7 +160,7 @@ const PlaceOrder = () => {
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="First name" error={errors.firstName}><input className={cls("firstName")} name="firstName" value={formData.firstName} onChange={set} autoComplete="given-name" /></Field>
               <Field label="Last name" error={errors.lastName}><input className={cls("lastName")} name="lastName" value={formData.lastName} onChange={set} autoComplete="family-name" /></Field>
-              <Field label="Mobile number (for delivery)" error={errors.phone}><input className={cls("phone")} name="phone" value={formData.phone} onChange={set} inputMode="tel" autoComplete="tel" placeholder="071 220 5395" /></Field>
+              <Field label="Mobile number (for delivery)" error={errors.phone}><input className={cls("phone")} name="phone" value={formData.phone} onChange={set} inputMode="tel" autoComplete="tel" placeholder="07X XXX XXXX" /></Field>
               <Field label="Email (for order confirmation)" error={errors.email}><input className={cls("email")} type="email" name="email" value={formData.email} onChange={set} autoComplete="email" /></Field>
               <div className="sm:col-span-2">
                 <Field label="Address" error={errors.street}><input className={cls("street")} name="street" value={formData.street} onChange={set} autoComplete="street-address" placeholder="House no, street, area" /></Field>
@@ -201,7 +203,7 @@ const PlaceOrder = () => {
           <button type="submit" disabled={isSubmitting} className="btn-dark w-full mt-6">
             {isSubmitting ? "Processing..." : method === "payhere" ? "Pay now" : "Place order"}
           </button>
-          <p className="mt-3 text-xs text-center text-ink/60">Returns &amp; exchanges within 7 days. Your details are only used to deliver your order.</p>
+          <p className="mt-3 text-xs text-center text-ink/60">{commerce.returnDays > 0 ? `Returns & exchanges within ${commerce.returnDays} days. ` : ""}Your details are only used to deliver your order.</p>
         </aside>
       </div>
     </form>

@@ -6,7 +6,7 @@ import RelatedProducts from "../components/RelatedProducts";
 import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
 import ProductReviews from "../components/ProductReviews";
 import Seo, { SITE_URL } from "../components/Seo";
-import { SITE, DELIVERY_FEE, FREE_DELIVERY_THRESHOLD, RETURN_DAYS } from "../config/site";
+import { useSettings } from "../context/SettingsContext";
 import { formatPrice, finalPrice } from "../utils/format";
 import { trackViewItem } from "../utils/analytics";
 
@@ -16,6 +16,10 @@ const thumb = (u) => u?.replace("/upload/", "/upload/f_auto,q_auto,w_200,c_limit
 const Product = () => {
   const { productId } = useParams();
   const { products, addToCart, isInWishlist, toggleWishlist, isProductsLoading, navigate } = useContext(ShopContext);
+  const { commerce, business } = useSettings();
+  const DELIVERY_FEE = commerce.deliveryFee;
+  const FREE_DELIVERY_THRESHOLD = commerce.freeDeliveryThreshold;
+  const RETURN_DAYS = commerce.returnDays;
   const [image, setImage] = useState("");
   const [size, setSize] = useState("");
   const [sizeError, setSizeError] = useState(false);
@@ -63,7 +67,7 @@ const Product = () => {
     image: p.image,
     sku: p._id,
     category: `${p.category} / ${p.subCategory}`,
-    brand: { "@type": "Brand", name: "OgeeEra" },
+    brand: { "@type": "Brand", name: business.name },
     ...(rating?.count > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: rating.average, reviewCount: rating.count } } : {}),
     offers: {
       "@type": "Offer",
@@ -103,8 +107,8 @@ const Product = () => {
     navigate("/cart");
   };
 
-  const waNotify = `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(`Hi OgeeEra, please let me know when "${p.name}" is back in stock. ${url}`)}`;
-  const waAsk = `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(`Hi OgeeEra, I have a question about "${p.name}". ${url}`)}`;
+  const waNotify = `https://wa.me/${business.whatsapp}?text=${encodeURIComponent(`Hi ${business.name}, please let me know when "${p.name}" is back in stock. ${url}`)}`;
+  const waAsk = `https://wa.me/${business.whatsapp}?text=${encodeURIComponent(`Hi ${business.name}, I have a question about "${p.name}". ${url}`)}`;
 
   return (
     <div className="py-8 md:py-12">
@@ -146,7 +150,7 @@ const Product = () => {
             )}
           </div>
           <p className="mt-1 text-xs text-taupe">
-            {formatPrice(DELIVERY_FEE)} delivery islandwide, free over {formatPrice(FREE_DELIVERY_THRESHOLD)}
+            {formatPrice(DELIVERY_FEE)} delivery islandwide{FREE_DELIVERY_THRESHOLD > 0 && <>, free over {formatPrice(FREE_DELIVERY_THRESHOLD)}</>}
           </p>
 
           <p className={`mt-4 text-sm ${p.stockStatus === "Limited Stock" ? "text-[#9a4a12]" : soldOut ? "text-red-700" : "text-green-800"}`}>
@@ -180,7 +184,11 @@ const Product = () => {
 
           <div className="mt-7 flex flex-wrap gap-3">
             {soldOut ? (
-              <a href={waNotify} target="_blank" rel="noopener noreferrer" className="btn-dark flex-1 sm:flex-none sm:min-w-[260px]">Notify me when back</a>
+              business.whatsapp ? (
+                <a href={waNotify} target="_blank" rel="noopener noreferrer" className="btn-dark flex-1 sm:flex-none sm:min-w-[260px]">Notify me when back</a>
+              ) : (
+                <button disabled className="btn-dark flex-1 sm:flex-none sm:min-w-[260px]">Sold out</button>
+              )
             ) : (
               <>
                 <button onClick={handleAdd} className="btn-dark flex-1 sm:flex-none sm:min-w-[200px]">Add to cart</button>
@@ -194,9 +202,9 @@ const Product = () => {
 
           <ul className="mt-8 space-y-3 text-sm text-ink/80 border-t border-stone/60 pt-6">
             <li className="flex gap-3"><FiTruck className="mt-0.5 shrink-0" /> Islandwide delivery. Cash on delivery or card payment.</li>
-            <li className="flex gap-3"><FiRefreshCw className="mt-0.5 shrink-0" /> Returns &amp; exchanges within {RETURN_DAYS} days. <Link to="/return-policy" className="underline">See policy</Link></li>
+            {RETURN_DAYS > 0 && <li className="flex gap-3"><FiRefreshCw className="mt-0.5 shrink-0" /> Returns &amp; exchanges within {RETURN_DAYS} days. <Link to="/return-policy" className="underline">See policy</Link></li>}
           </ul>
-          <a href={waAsk} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block text-sm underline">Questions about fit or fabric? Ask us on WhatsApp</a>
+          {business.whatsapp && <a href={waAsk} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block text-sm underline">Questions about fit or fabric? Ask us on WhatsApp</a>}
         </div>
       </div>
 

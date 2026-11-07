@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 import crypto from 'crypto';
 import { sendOrderConfirmationEmail } from "../config/email.js";
 import productModel from "../models/productModel.js";
-import { deliveryFeeFor, statusFromStock } from "../config/shop.js";
+import { statusFromStock } from "../config/shop.js";
+import { getSettings, deliveryFeeFor } from "../config/settings.js";
 import { GUEST_ID } from "../middleware/optionalAuth.js";
 
 // Load environment variables
@@ -76,7 +77,7 @@ const buildOrderFromCart = async (rawItems) => {
     items.push({ ...product, size, quantity });
   }
   subtotal = Math.round(subtotal * 100) / 100;
-  const deliveryFee = deliveryFeeFor(subtotal);
+  const deliveryFee = deliveryFeeFor(await getSettings(), subtotal);
   return { items, subtotal, deliveryFee, amount: Math.round((subtotal + deliveryFee) * 100) / 100 };
 };
 
@@ -101,14 +102,14 @@ const decrementStock = async (items) => {
   }
 };
 
-// Mirror each order to the shop's Google Sheet from the server so it is never lost
-// when a customer closes the browser. URL can be overridden with GOOGLE_SHEET_URL.
-const DEFAULT_SHEET_URL =
-  "https://script.google.com/macros/s/AKfycby7DDOdCEGRVUtOPGaULYkqRmFIM-3GJaQYA2Esufme4KOPn0aCTlmFwX18iu5T_vGtIQ/exec";
+// Mirror each order to the Google Sheet from the server so it is never lost when a customer closes
+// the browser. The URL is set in the admin panel (Settings) or GOOGLE_SHEET_URL; skipped if neither is set.
 const logOrderToSheet = async (order, status) => {
   try {
     const a = order.address || {};
-    await fetch(process.env.GOOGLE_SHEET_URL || DEFAULT_SHEET_URL, {
+    const sheetUrl = (await getSettings()).orderSheetUrl || process.env.GOOGLE_SHEET_URL;
+    if (!sheetUrl) return;
+    await fetch(sheetUrl, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({

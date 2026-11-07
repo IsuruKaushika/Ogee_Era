@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "../config/site";
+import { useSettings } from "./SettingsContext";
 import { trackAddToCart } from "../utils/analytics";
 import { finalPrice } from "../utils/format";
 
@@ -13,8 +13,9 @@ const ShopContextProvider = (props) => {
   const GUEST_CART_KEY = "guestCart";
   const GUEST_WISHLIST_KEY = "guestWishlist";
   const currency = "Rs.";
-  const delivery_fee = DELIVERY_FEE;
-  const free_delivery_threshold = FREE_DELIVERY_THRESHOLD;
+  const { commerce } = useSettings();
+  const delivery_fee = commerce.deliveryFee;
+  const free_delivery_threshold = commerce.freeDeliveryThreshold;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const networkErrorMessage = "Unable to connect. Please refresh the page.";
   const networkToastId = "network-error";

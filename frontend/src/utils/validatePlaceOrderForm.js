@@ -1,10 +1,10 @@
 import * as Yup from "yup";
-import { SRI_LANKA_DISTRICTS } from "../config/site";
+import { SRI_LANKA_DISTRICTS } from "../data/districts";
 
 // Names allow spaces, hyphens, apostrophes and dots (e.g. "De Silva", "O'Connor") and any script (Sinhala, Tamil).
 const NAME = /^[\p{L}\p{M}][\p{L}\p{M}\s.'-]*$/u;
 
-// Accepts 0712205395, 071 220 5395, 071-220-5395, +94 71 220 5395
+// Accepts 0712345678, 071 234 5678, 071-234-5678, +94 71 234 5678
 export const normalizePhone = (value = "") => String(value).replace(/[\s\-().]/g, "");
 
 const placeOrderSchema = Yup.object().shape({
@@ -13,7 +13,7 @@ const placeOrderSchema = Yup.object().shape({
   email: Yup.string().trim().required("Email is required").email("Enter a valid email address"),
   phone: Yup.string()
     .required("Phone number is required")
-    .test("phone", "Enter a valid phone number, e.g. 071 220 5395", (v) => /^(\+94|0)?7\d{8}$|^\+?\d{9,15}$/.test(normalizePhone(v))),
+    .test("phone", "Enter a valid phone number, e.g. 071 234 5678", (v) => /^(\+94|0)?7\d{8}$|^\+?\d{9,15}$/.test(normalizePhone(v))),
   street: Yup.string().trim().min(5, "Please enter your full address").required("Address is required"),
   city: Yup.string().trim().required("City is required"),
   state: Yup.string().oneOf(SRI_LANKA_DISTRICTS, "Please choose your district").required("District is required"),

@@ -2,11 +2,14 @@ import React, { useState, useRef } from 'react'
 import Title from '../components/Title'
 import { assets } from '../assets/assets'
 import NewsLetterBox from '../components/NewsLetterBox'
-import emailjs from '@emailjs/browser'
-import { ALL_FAQS } from '../data/faqs'
+import axios from 'axios'
+import { buildFaqGroups } from '../data/faqs'
+import { useSettings } from '../context/SettingsContext'
 
 const Contact = () => {
   const form = useRef();
+  const settings = useSettings();
+  const { business } = settings;
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -28,23 +31,21 @@ const Contact = () => {
     setLoading(true);
     setStatus(null);
 
-    // EmailJS service configuration
-    emailjs.sendForm(
-      'service_8z22ypm', // Replace with your EmailJS service ID
-      'template_6mmafon', // Replace with your EmailJS template ID
-      form.current,
-      'QrrSb4PfdwR9On26Z' // Replace with your EmailJS public key
-    )
-    .then((result) => {
-      console.log('Email sent successfully:', result.text);
-      setLoading(false);
-      setStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '' });
-    }, (error) => {
-      console.error('Failed to send email:', error.text);
-      setLoading(false);
-      setStatus('error');
-    });
+    axios
+      .post(`${import.meta.env.VITE_BACKEND_URL}/api/contact/send`, formData)
+      .then(({ data }) => {
+        setLoading(false);
+        if (data.success) {
+          setStatus('success');
+          setFormData({ name: '', email: '', subject: '', message: '' });
+        } else {
+          setStatus('error');
+        }
+      })
+      .catch(() => {
+        setLoading(false);
+        setStatus('error');
+      });
   };
 
   return (
@@ -72,8 +73,7 @@ const Contact = () => {
                 </svg>
                 <p className='text-gray-600'>
                   <span className='font-medium'>Address:</span><br />
-                  'Saumya Jayasena'<br />
-                  191/2, Ambagahawatta, Kalawana
+                  {business.address || 'Online store, delivering islandwide'}
                 </p>
               </div>
               
@@ -83,7 +83,7 @@ const Contact = () => {
                 </svg>
                 <p className='text-gray-600'>
                   <span className='font-medium'>Phone:</span><br />
-                  +94 712205395
+                  {business.phone || 'Please use the contact form'}
                 </p>
               </div>
               
@@ -93,7 +93,7 @@ const Contact = () => {
                 </svg>
                 <p className='text-gray-600'>
                   <span className='font-medium'>Email:</span><br />
-                  ogeeeraa@gmail.com
+                  {business.email || 'Please use the contact form'}
                 </p>
               </div>
               
@@ -103,9 +103,7 @@ const Contact = () => {
                 </svg>
                 <p className='text-gray-600'>
                   <span className='font-medium'>Working Hours:</span><br />
-                  Monday - Friday: 9:00 AM - 6:00 PM<br />
-                  Saturday: 9:00 AM - 4:00 PM<br />
-                  Sunday: Closed
+                  {business.hours || 'Contact us for our opening hours'}
                 </p>
               </div>
             </div>
@@ -244,7 +242,7 @@ const Contact = () => {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-semibold text-center mb-8">Frequently Asked Questions</h2>
           <div className="grid gap-4">
-            {ALL_FAQS.filter((f) =>
+            {buildFaqGroups(settings).flatMap((g) => g.items).filter((f) =>
               ["What payment methods do you accept?", "How much is delivery?", "How can I track my order?", "What is your return policy?"].includes(f.q)
             ).map((faq) => (
               <div key={faq.q} className="border rounded-lg p-4 hover:shadow-md transition-shadow">

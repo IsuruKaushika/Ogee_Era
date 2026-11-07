@@ -2,12 +2,13 @@ import { Link, useLocation } from "react-router-dom";
 import { useContext } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { formatPrice } from "../utils/format";
-import { SITE } from "../config/site";
+import { useSettings } from "../context/SettingsContext";
 
 // Shown after a cash-on-delivery order (works for guests and logged-in customers)
 const OrderConfirmed = () => {
   const { state } = useLocation();
   const { token } = useContext(ShopContext);
+  const { business } = useSettings();
 
   if (!state?.orderId) {
     return (
@@ -20,7 +21,7 @@ const OrderConfirmed = () => {
   }
 
   const ref = String(state.orderId).slice(-8).toUpperCase();
-  const wa = `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(`Hi OgeeEra, my order reference is ${ref}.`)}`;
+  const wa = `https://wa.me/${business.whatsapp}?text=${encodeURIComponent(`Hi ${business.name}, my order reference is ${ref}.`)}`;
 
   return (
     <div className="py-16 md:py-24 max-w-xl mx-auto text-center">
@@ -36,7 +37,7 @@ const OrderConfirmed = () => {
       </div>
       <div className="mt-8 flex flex-wrap justify-center gap-4">
         <Link to="/collection" className="btn-dark">Continue shopping</Link>
-        {token ? <Link to="/orders" className="btn-outline">View my orders</Link> : <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-outline">Track on WhatsApp</a>}
+        {token ? <Link to="/orders" className="btn-outline">View my orders</Link> : business.whatsapp && <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-outline">Track on WhatsApp</a>}
       </div>
     </div>
   );

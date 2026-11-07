@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { googleLogout } from "@react-oauth/google";
+import Logo from "./Logo";
 import { FiHeart, FiSearch, FiShoppingBag, FiUser, FiMenu, FiX } from "react-icons/fi";
 
 export const NAV_LINKS = [
@@ -39,13 +40,13 @@ const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-ivory/95 backdrop-blur border-b border-stone/60">
-      <div className="container-x flex items-center justify-between h-16 md:h-[72px]">
+      <div className="container-x flex items-center justify-between h-[72px] md:h-[88px]">
         <div className="flex items-center gap-4 lg:hidden">
           <button onClick={() => setOpen(true)} aria-label="Open menu"><FiMenu className="w-5 h-5" /></button>
         </div>
 
-        <Link to="/" className="font-display text-2xl md:text-[28px] tracking-[0.18em] uppercase text-ink" aria-label="OgeeEra home">
-          OgeeEra
+        <Link to="/" className="flex items-center" aria-label="Home">
+          <Logo className="h-14 md:h-[68px]" />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-7 text-[13px] text-ink/85" aria-label="Main">
@@ -88,7 +89,7 @@ const Navbar = () => {
         <div className="fixed inset-0 z-50 bg-black/40 lg:hidden" onClick={() => setOpen(false)}>
           <div className="w-[82%] max-w-sm h-full bg-ivory p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-8">
-              <span className="font-display text-2xl tracking-[0.18em] uppercase">OgeeEra</span>
+              <Logo className="h-12" />
               <button onClick={() => setOpen(false)} aria-label="Close menu"><FiX className="w-5 h-5" /></button>
             </div>
             <nav className="flex flex-col text-[15px]">

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useSettings } from '../context/SettingsContext';
 
 const Policy = () => {
+  const { business } = useSettings();
   const [expandedSections, setExpandedSections] = useState({
     intro: true,
     information: false,
@@ -112,9 +114,9 @@ const Policy = () => {
         <Section id="contact" title="8. Contact Us">
           <p>If you have any questions or concerns about this Privacy Policy, please contact us:</p>
           <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li>Email: ogeeeraa@gmail.com</li>
-            <li>Phone: +94 71 220 5395</li>
-            <li>Live Chat: Available during business hours</li>
+            {business.email && <li>Email: {business.email}</li>}
+            {business.phone && <li>Phone: {business.phone}</li>}
+            {business.hours && <li>Support hours: {business.hours}</li>}
           </ul>
         </Section>
       </div>
