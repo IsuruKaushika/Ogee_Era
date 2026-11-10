@@ -87,7 +87,7 @@ const Navbar = () => {
       {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 lg:hidden" onClick={() => setOpen(false)}>
-          <div className="w-[82%] max-w-sm h-full bg-ivory p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="w-[82%] max-w-sm h-full bg-ivory p-6 flex flex-col overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-8">
               <Logo className="h-12" />
               <button onClick={() => setOpen(false)} aria-label="Close menu"><FiX className="w-5 h-5" /></button>

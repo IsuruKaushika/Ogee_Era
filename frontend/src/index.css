@@ -11,6 +11,7 @@ html {
 }
 
 body {
+  overflow-x: clip; /* safety net: nothing may widen the page on small screens */
   font-family: Inter, system-ui, sans-serif;
   background-color: #faf7f2;
   color: #231f1c;
@@ -172,5 +173,14 @@ h3,
   a.active {
     background-color: black;
     color: white;
+  }
+}
+
+/* Smaller screens: slightly tighter buttons so two fit side by side */
+@media (max-width: 480px) {
+  .btn-dark,
+  .btn-outline {
+    padding: 0.85rem 1rem;
+    letter-spacing: 0.1em;
   }
 }
