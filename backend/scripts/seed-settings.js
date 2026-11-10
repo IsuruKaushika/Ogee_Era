@@ -14,7 +14,7 @@ const STARTING_VALUES = {
     email: "ogeeeraa@gmail.com",
     phone: "+94 71 220 5395",
     whatsapp: "94712205395",
-    address: "",
+    address: "191/2, Ambagahawatta, Kalawana",
     hours: "Mon-Fri 9:00 AM - 6:00 PM, Sat 9:00 AM - 4:00 PM, closed Sunday",
   },
   social: {
@@ -41,6 +41,13 @@ for (const [key, value] of Object.entries(STARTING_VALUES)) {
   if (existing[key] === undefined) {
     next[key] = value;
     added.push(key);
+  }
+}
+// Also fill business details that exist but are still empty (never replaces a value you typed)
+for (const [k, v] of Object.entries(STARTING_VALUES.business)) {
+  if (next.business && !next.business[k]) {
+    next.business = { ...next.business, [k]: v };
+    added.push(`business.${k}`);
   }
 }
 await settingsModel.updateOne({ key: "main" }, { $set: { data: next } }, { upsert: true });
