@@ -4,10 +4,10 @@ export const DEFAULT_SETTINGS = {
   business: {
     name: "OgeeEra",
     tagline: "Sri Lankan fashion for women and men. Effortless style, delivered islandwide.",
-    email: "",
-    phone: "",
-    whatsapp: "", // digits only, international format, e.g. 94712345678
-    address: "",
+    email: "ogeeeraa@gmail.com",
+    phone: "+94 71 220 5395",
+    whatsapp: "94712205395", // digits only, international format
+    address: "191/2, Ambagahawatta, Kalawana",
     hours: "",
   },
   social: { facebook: "", instagram: "", instagramHandle: "", tiktok: "" },
