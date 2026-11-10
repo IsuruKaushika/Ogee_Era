@@ -112,7 +112,7 @@ const Login = () => {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message || "An error occurred", toastOptions);
+      toast.error("Something went wrong. Please try again.", toastOptions);
     }
   };
 

@@ -27,7 +27,7 @@ const Orders = () => {
       }
     } catch (error) {
       console.log(error);
-      toast.error("Failed to fetch orders");
+      toast.error("We could not load your orders. Please try again.");
     }
   };
   useEffect(() => {

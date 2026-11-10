@@ -27,11 +27,11 @@ const Account = () => {
         setProfile(user);
         setName(user?.name || "");
       } else {
-        toast.error(response.data.message || "Failed to load profile");
+        toast.error(response.data.message || "We could not load your profile. Please try again.");
       }
     } catch (error) {
       console.log(error);
-      toast.error("Failed to load profile");
+      toast.error("We could not load your profile. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -83,11 +83,11 @@ const Account = () => {
           autoClose: 1600,
         });
       } else {
-        toast.error(response.data.message || "Failed to update profile");
+        toast.error(response.data.message || "We could not update your profile. Please try again.");
       }
     } catch (error) {
       console.log(error);
-      toast.error("Failed to update profile");
+      toast.error("We could not update your profile. Please try again.");
     } finally {
       setSaving(false);
     }

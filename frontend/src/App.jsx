@@ -45,7 +45,7 @@ const AnalyticsTracker = () => {
 
 const App = () => (
   <div className="min-h-screen flex flex-col bg-ivory">
-    <ToastContainer />
+    <ToastContainer position="top-center" autoClose={2500} hideProgressBar closeButton={false} limit={3} pauseOnFocusLoss={false} newestOnTop />
     <RouteSeo />
     <ScrollToTop />
     <AnalyticsTracker />

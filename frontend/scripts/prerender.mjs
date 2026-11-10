@@ -121,7 +121,7 @@ const render = (template, { title, description, urlPath, image, type, schemas, b
   return template
     .replace(/<title>.*?<\/title>/s, `<title>${esc(fullTitle)}</title>`)
     .replace("</head>", `    ${head}\n  </head>`)
-    .replace('<div id="root"></div>', `<div id="root">${body}</div>`);
+    .replace('<div id="root"></div>', `<div id="root"><div style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden">${body}</div></div>`);
 };
 
 const write = (urlPath, html) => {

@@ -17,7 +17,7 @@ const ShopContextProvider = (props) => {
   const delivery_fee = commerce.deliveryFee;
   const free_delivery_threshold = commerce.freeDeliveryThreshold;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  const networkErrorMessage = "Unable to connect. Please refresh the page.";
+  const networkErrorMessage = "We could not reach the shop right now. Please check your connection and try again.";
   const networkToastId = "network-error";
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -246,7 +246,7 @@ const ShopContextProvider = (props) => {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -274,7 +274,7 @@ const ShopContextProvider = (props) => {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
