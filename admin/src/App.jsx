@@ -20,8 +20,7 @@ import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
 
 import Login from "./components/Login";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = "Rs";
@@ -31,22 +30,24 @@ const App = () => {
     localStorage.getItem("token") ? localStorage.getItem("token") : "",
   );
 
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => {
     localStorage.setItem("token", token);
   }, [token]);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <ToastContainer />
+    <div className="bg-[#f5f6f8] min-h-screen text-slate-600">
+      <ToastContainer position="top-right" />
       {token === "" ? (
         <Login setToken={setToken} />
       ) : (
         <>
-          <Navbar setToken={setToken} />
-          <hr />
+          <Navbar setToken={setToken} onMenu={() => setMenuOpen(true)} />
           <div className="flex w-full">
-            <Sidebar />
-            <div className="w-[70%] mx-auto ml-[max(5vw,25px)] my-8 text-gray-600 text-base">
+            <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
+            <main className="flex-1 min-w-0 px-3 sm:px-6 lg:px-8 py-6 text-[15px]">
+              <div className="max-w-[1280px] mx-auto">
               <Routes>
                 <Route path="/" element={<Home token={token} />} />
                 <Route path="/overview" element={<Home token={token} />} />
@@ -78,7 +79,8 @@ const App = () => {
                 <Route path="/settings" element={<Settings token={token} />} />
                 <Route path="/edit/:id" element={<Edit token={token} />} />
               </Routes>
-            </div>
+              </div>
+            </main>
           </div>
         </>
       )}

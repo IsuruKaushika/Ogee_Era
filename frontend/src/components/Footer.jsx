@@ -27,9 +27,9 @@ const Footer = () => {
   const { business, social } = useSettings();
   return (
     <footer className="bg-ivory">
-      <div className="container-x pt-12 pb-8 grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr]">
-        <div>
-          <Logo className="h-20" />
+      <div className="container-x pt-10 md:pt-12 pb-8 grid grid-cols-2 gap-x-6 gap-y-9 md:gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr]">
+        <div className="col-span-2 md:col-span-1">
+          <Logo className="h-16 md:h-20" />
           {business.tagline && <p className="mt-3 text-[13px] text-ink/70 max-w-[240px] leading-relaxed">{business.tagline}</p>}
           <div className="flex gap-4 mt-5">
             <Social href={social.instagram} label="Instagram">
@@ -44,7 +44,7 @@ const Footer = () => {
         <Col title="Customer Care" links={[["Track Order", "/orders"], ["Returns & Exchanges", "/return-policy"], ["Delivery & Payment", "/faq"], ["FAQ", "/faq"], ["Contact Us", "/contact"]]} />
         <Col title="About" links={[["Our Story", "/about"], ["Terms & Conditions", "/terms-and-conditions"], ["Privacy Policy", "/privacy-and-policy"]]} />
 
-        <div>
+        <div className="col-span-2 md:col-span-1">
           <p className="text-sm font-medium mb-4">Get in touch</p>
           <ul className="space-y-2 text-[13px] text-ink/70">
             {business.whatsapp && (
@@ -59,9 +59,9 @@ const Footer = () => {
       </div>
 
       <div className="border-t border-stone/60">
-        <div className="container-x py-5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-ink/60">
+        <div className="container-x pt-5 pb-24 md:pb-5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-ink/60">
           <p>&copy; {new Date().getFullYear()} {business.name}. All rights reserved.</p>
-          <div className="flex items-center gap-2" aria-label="Accepted payment methods">
+          <div className="flex flex-wrap items-center justify-center gap-2" aria-label="Accepted payment methods">
             <Pay>Cash on Delivery</Pay><Pay>VISA</Pay><Pay>Mastercard</Pay><Pay>PayHere</Pay>
           </div>
           <a href="https://www.cigmalabs.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">

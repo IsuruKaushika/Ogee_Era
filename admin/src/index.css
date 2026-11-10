@@ -1,31 +1,106 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Prata&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prata&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-a.active hr{
- display: block;
+/* Calm, low-glare look for long days in the admin: soft off-white page, white cards, slate text. */
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
-*{
-  font-family : outfit;
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  background-color: #f5f6f8;
+  color: #475569;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+* {
+  font-family: inherit;
 }
 
 .prata-regular {
-    font-family: "Prata", serif;
-    font-weight: 400;
-    font-style: normal;
-  }
-  
-  .active{
-    background-color: rgb(90, 165, 231);
-    border-color:aqua
-  }
+  font-family: "Prata", serif;
+  font-weight: 400;
+  font-style: normal;
+}
 
-  select,input,textarea{
-    border:1px solid hwb(205 20% 41%);
-    outline-color:#74a2d1 ;
-    border-radius: 4px;
+h3 {
+  color: #1e293b;
+}
+
+/* Form controls: softer border, clear (but gentle) focus ring */
+select,
+input,
+textarea {
+  border: 1px solid #d5dbe4;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #1e293b;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: #64748b;
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.18);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #334155;
+}
+
+/* The order cards, tiles and panels used across the pages become soft rounded cards */
+[class*="border-2"][class*="border-gray-200"] {
+  border-width: 1px;
+  border-color: #e5e8ee;
+  border-radius: 14px;
+  background-color: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Buttons: toned-down colours (same buttons, same behaviour) */
+.bg-black {
+  background-color: #1e293b;
+}
+.bg-red-600,
+.bg-red-500 {
+  background-color: #dc5a5a;
+}
+.bg-red-600:hover,
+.bg-red-500:hover {
+  background-color: #c94a4a;
+}
+
+/* Tables and wide content scroll sideways on phones instead of breaking the page */
+table {
+  border-collapse: collapse;
+}
+main img {
+  max-width: 100%;
+}
+
+/* Phones: comfortable tap targets and no iOS zoom on focus */
+@media (max-width: 640px) {
+  select,
+  input,
+  textarea {
+    font-size: 16px;
   }
+  .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* Respect "reduce motion" */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
