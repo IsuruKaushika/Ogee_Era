@@ -1,4 +1,5 @@
 import { useState, useContext } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { googleLogout } from "@react-oauth/google";
@@ -85,8 +86,8 @@ const Navbar = () => {
       </div>
 
       {/* Mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-50 bg-black/40 lg:hidden" onClick={() => setOpen(false)}>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[60] bg-black/40 lg:hidden" onClick={() => setOpen(false)}>
           <div className="w-[82%] max-w-sm h-full bg-ivory p-6 flex flex-col overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-8">
               <Logo className="h-12" />
@@ -107,7 +108,8 @@ const Navbar = () => {
               </button>
             </nav>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </header>
   );
