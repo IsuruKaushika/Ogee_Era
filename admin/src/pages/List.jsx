@@ -224,47 +224,51 @@ const List = ({ token }) => {
         
         {/*-------Product List-------- */}
         {
-          filteredList.map((item, index) => (
-            <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr_1fr] items-center gap-2 py-1 px-2 border text-sm' key={index}>
-              <img className='w-12' src={item.image[0]} alt=""/>
-              <p>{item.name}</p>
-              <p>{item.category}</p>
-              <p>{currency}{item.price}</p>
-              
-              {/* Stock Status Dropdown */}
-              <div className='text-right md:text-center'>
-                <select
-                  value={item.stockStatus}
-                  onChange={(e) => updateStock(item._id, e.target.value)}
-                  className={`px-2 py-1 rounded text-white cursor-pointer ${getStatusColor(item.stockStatus)}`}
-                  disabled={isUpdating}
-                >
-                  {stockOptions.map(option => (
-                    <option 
-                      key={option} 
-                      value={option}
-                      className="bg-white text-gray-800"
-                    >
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {/* Edit Button */}
-              <button
-                onClick={() => {
-                navigate(`/edit/${item._id}`)
-                }}
-                className='text-gray-500 hover:text-gray-700 cursor-pointer flex justify-center'
-              ><TbEdit />
-              </button>
+          filteredList.map((item, index) => {
+            const statusSelect = (
+              <select
+                value={item.stockStatus}
+                onChange={(e) => updateStock(item._id, e.target.value)}
+                className={`px-2 py-1 rounded text-white cursor-pointer ${getStatusColor(item.stockStatus)}`}
+                disabled={isUpdating}
+              >
+                {stockOptions.map(option => (
+                  <option key={option} value={option} className="bg-white text-gray-800">{option}</option>
+                ))}
+              </select>
+            )
+            return (
+              <div key={index}>
+                {/* Phones: one card per product */}
+                <div className='md:hidden flex gap-3 items-start p-3 border border-gray-200 rounded-xl bg-white text-sm'>
+                  <img className='w-16 h-20 object-cover rounded-md bg-gray-100 shrink-0' src={item.image[0]} alt=""/>
+                  <div className='flex-1 min-w-0'>
+                    <p className='font-medium text-gray-800 leading-snug'>{item.name}</p>
+                    <p className='text-xs text-gray-500 mt-0.5'>{item.category}</p>
+                    <p className='mt-1 font-medium text-gray-700'>{currency}{item.price}</p>
+                    <div className='flex items-center gap-3 mt-2'>
+                      {statusSelect}
+                      <button onClick={() => navigate(`/edit/${item._id}`)} aria-label='Edit' className='p-2 text-gray-500 hover:text-gray-800'><TbEdit size={20} /></button>
+                      <button onClick={() => removeProduct(item._id)} aria-label='Delete' className='p-2 text-gray-500 hover:text-red-600'><MdDeleteForever size={22} /></button>
+                    </div>
+                  </div>
+                </div>
 
-              {/* Delete Button (X) */}
-              <div onClick={() => removeProduct(item._id)} className=' cursor-pointer text-gray-900 flex justify-center'><MdDeleteForever size={20} className=''/></div>
-            </div>
-          ))
+                {/* Larger screens: table row */}
+                <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr_1fr] items-center gap-2 py-1 px-2 border text-sm'>
+                  <img className='w-12' src={item.image[0]} alt=""/>
+                  <p>{item.name}</p>
+                  <p>{item.category}</p>
+                  <p>{currency}{item.price}</p>
+                  <div className='text-center'>{statusSelect}</div>
+                  <button onClick={() => navigate(`/edit/${item._id}`)} className='text-gray-500 hover:text-gray-700 cursor-pointer flex justify-center'><TbEdit /></button>
+                  <div onClick={() => removeProduct(item._id)} className=' cursor-pointer text-gray-900 flex justify-center'><MdDeleteForever size={20} /></div>
+                </div>
+              </div>
+            )
+          })
         }
-        
+
         {/* Show message if no products */}
         {filteredList.length === 0 && (
           <div className="py-4 text-center text-gray-500">
