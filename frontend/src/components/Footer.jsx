@@ -61,6 +61,7 @@ const Footer = () => {
       <div className="border-t border-stone/60">
         <div className="container-x pt-5 pb-24 md:pb-5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-ink/60">
           <p>&copy; {new Date().getFullYear()} {business.name}. All rights reserved.</p>
+          <p className="sr-only">Also searched as Ogee Era, Ogeeera, Ogera, Ogiera, Ogi Era and Og Era.</p>
           <div className="flex flex-wrap items-center justify-center gap-2" aria-label="Accepted payment methods">
             <Pay>Cash on Delivery</Pay><Pay>VISA</Pay><Pay>Mastercard</Pay><Pay>PayHere</Pay>
           </div>

@@ -22,6 +22,7 @@ const Seo = ({
     <Helmet>
       <title>{fullTitle}</title>
       {description && <meta name="description" content={description} />}
+      <meta name="keywords" content="OgeeEra, Ogee Era, Ogeeera, Ogera, Ogiera, Ogi Era, Og Era, ogeera, online fashion store Sri Lanka, dresses, tops, sarongs, sarees" />
       <link rel="canonical" href={url} />
       <meta
         name="robots"

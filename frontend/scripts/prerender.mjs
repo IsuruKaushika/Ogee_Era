@@ -19,7 +19,7 @@ const PAGES = {
   "/": {
     title: "",
     description:
-      "OgeeEra is a Sri Lankan fashion store for women and men. Shop dresses, tops, sarongs and sarees with islandwide delivery, cash on delivery and easy 7-day returns.",
+      "OgeeEra (Ogee Era, Ogera, Ogiera) is a Sri Lankan fashion store for women and men. Shop dresses, tops, sarongs and sarees with islandwide delivery, cash on delivery and easy 7-day returns.",
   },
   "/collection": {
     title: "Shop Women's & Men's Fashion",
@@ -70,7 +70,7 @@ const organizationSchema = () => {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
         name: business.name || SITE_NAME,
-        alternateName: ["Ogee Era", "ogeeera", "ogeeera.lk"],
+        alternateName: ["Ogee Era", "Ogeeera", "Ogera", "Ogiera", "Ogi Era", "Og Era", "ogeera", "ogeeera.lk"],
         url: SITE_URL,
         logo: `${SITE_URL}/logo.png`,
         ...(phone ? { telephone: phone } : {}),
@@ -82,13 +82,15 @@ const organizationSchema = () => {
         "@id": `${SITE_URL}/#website`,
         url: SITE_URL,
         name: business.name || SITE_NAME,
-        alternateName: ["Ogee Era", "ogeeera", "ogeeera.lk"],
+        alternateName: ["Ogee Era", "Ogeeera", "Ogera", "Ogiera", "Ogi Era", "Og Era", "ogeera", "ogeeera.lk"],
         inLanguage: "en-LK",
         publisher: { "@id": `${SITE_URL}/#organization` },
       },
     ],
   };
 };
+
+const ALIAS_TEXT = "OgeeEra is also searched as Ogee Era, Ogeeera, Ogera, Ogiera, Ogi Era and Og Era.";
 
 const esc = (s) =>
   String(s ?? "")
@@ -105,6 +107,7 @@ const render = (template, { title, description, urlPath, image, type, schemas, b
   const url = `${SITE_URL}${urlPath === "/" ? "" : urlPath}` || SITE_URL;
   const head = [
     `<meta name="description" content="${esc(description)}" data-prerender />`,
+    `<meta name="keywords" content="OgeeEra, Ogee Era, Ogeeera, Ogera, Ogiera, Ogi Era, Og Era, ogeera, online fashion store Sri Lanka, dresses, tops, sarongs, sarees" data-prerender />`,
     `<link rel="canonical" href="${esc(url)}" data-prerender />`,
     `<meta name="robots" content="index,follow,max-image-preview:large" data-prerender />`,
     `<meta property="og:title" content="${esc(fullTitle)}" data-prerender />`,
@@ -176,6 +179,7 @@ try {
         schemas: urlPath === "/" ? [organizationSchema()] : urlPath === "/faq" ? [buildFaqSchema(FAQ_GROUPS)] : [],
         body:
           `${nav}<h1>${esc(heading)}</h1><p>${esc(page.description)}</p>` + (page.intro ? `<p>${esc(page.intro)}</p>` : "") +
+          (urlPath === "/" || urlPath === "/about" ? `<p>${ALIAS_TEXT}</p>` : "") +
           (urlPath === "/faq"
             ? FAQ_GROUPS.flatMap((g) => g.items)
                 .map((i) => `<h2>${esc(i.q)}</h2><p>${esc(i.a)}</p>`)

@@ -10,7 +10,7 @@ const PAGES = {
   "/": {
     title: "",
     description:
-      "OgeeEra is a Sri Lankan fashion store for women and men. Shop dresses, tops, sarongs and sarees with islandwide delivery, cash on delivery and easy 7-day returns.",
+      "OgeeEra (Ogee Era, Ogera, Ogiera) is a Sri Lankan fashion store for women and men. Shop dresses, tops, sarongs and sarees with islandwide delivery, cash on delivery and easy 7-day returns.",
   },
   "/collection": {
     title: "Shop Women's & Men's Fashion",
@@ -54,7 +54,7 @@ const buildOrganizationSchema = ({ business, social }) => {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
         name: business.name,
-        alternateName: ["Ogee Era", "ogeeera", "ogeeera.lk"],
+        alternateName: ["Ogee Era", "Ogeeera", "Ogera", "Ogiera", "Ogi Era", "Og Era", "ogeera", "ogeeera.lk"],
         url: SITE_URL,
         logo: `${SITE_URL}/logo.png`,
         ...(phone ? { telephone: phone } : {}),
@@ -70,7 +70,7 @@ const buildOrganizationSchema = ({ business, social }) => {
         "@id": `${SITE_URL}/#website`,
         url: SITE_URL,
         name: business.name,
-        alternateName: ["Ogee Era", "ogeeera", "ogeeera.lk"],
+        alternateName: ["Ogee Era", "Ogeeera", "Ogera", "Ogiera", "Ogi Era", "Og Era", "ogeera", "ogeeera.lk"],
         inLanguage: "en-LK",
         publisher: { "@id": `${SITE_URL}/#organization` },
       },
