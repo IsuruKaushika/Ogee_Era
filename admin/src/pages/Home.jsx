@@ -424,6 +424,7 @@ const Home = ({ token }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [salesRange, setSalesRange] = useState("week");
+  const [visits, setVisits] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -459,6 +460,10 @@ const Home = ({ token }) => {
     };
 
     fetchDashboardData();
+    axios
+      .post(backendUrl + "/api/analytics/stats", {}, { headers: { token } })
+      .then((r) => r.data.success && setVisits(r.data.stats))
+      .catch(() => {});
   }, [token]);
 
   const analytics = useMemo(() => {
@@ -588,6 +593,36 @@ const Home = ({ token }) => {
           note="Completed deliveries"
         />
       </div>
+
+      {visits && (
+        <div>
+          <h2 className="mb-2 text-sm font-semibold text-gray-700">Site Views</h2>
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
+            <StatCard title="Views Today" value={visits.today.views.toLocaleString()} note={`${visits.today.visitors.toLocaleString()} visitors`} />
+            <StatCard title="Yesterday" value={visits.yesterday.views.toLocaleString()} note={`${visits.yesterday.visitors.toLocaleString()} visitors`} />
+            <StatCard title="Last 7 Days" value={visits.last7.views.toLocaleString()} note={`${visits.last7.visitors.toLocaleString()} visitors`} />
+            <StatCard title="Last 30 Days" value={visits.last30.views.toLocaleString()} note={`${visits.last30.visitors.toLocaleString()} visitors`} />
+            <StatCard title="All Time" value={visits.total.views.toLocaleString()} note={`${visits.total.visitors.toLocaleString()} visitors`} />
+          </div>
+          <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Page views, last 14 days</p>
+            <div className="mt-3 flex h-28 items-end gap-1">
+              {visits.byDay.map((d) => {
+                const max = Math.max(...visits.byDay.map((x) => x.views), 1);
+                return (
+                  <div key={d.day} className="flex-1" title={`${d.day}: ${d.views} views, ${d.visitors} visitors`}>
+                    <div className="w-full rounded-t bg-sky-400" style={{ height: `${Math.max((d.views / max) * 100, d.views ? 4 : 1)}%` }} />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+              <span>{visits.byDay[0].day.slice(5)}</span>
+              <span>{visits.byDay[13].day.slice(5)}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <SalesLineChart

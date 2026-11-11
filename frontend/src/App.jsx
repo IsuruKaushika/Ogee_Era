@@ -40,6 +40,25 @@ const AnalyticsTracker = () => {
   const { pathname } = useLocation();
   useEffect(() => initAnalytics(), []);
   useEffect(() => trackPageView(pathname), [pathname]);
+  // Simple first-party site view counter (shown in the admin dashboard)
+  useEffect(() => {
+    const base = import.meta.env.VITE_BACKEND_URL;
+    if (!base) return;
+    let newVisitor = false;
+    try {
+      const today = new Date().toDateString();
+      if (localStorage.getItem("oe_visit_day") !== today) {
+        newVisitor = true;
+        localStorage.setItem("oe_visit_day", today);
+      }
+    } catch {}
+    fetch(base.replace(/\/$/, "") + "/api/analytics/hit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newVisitor }),
+      keepalive: true,
+    }).catch(() => {});
+  }, [pathname]);
   return null;
 };
 

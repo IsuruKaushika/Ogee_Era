@@ -12,6 +12,7 @@ import reviewRouter from './routes/reviewRoute.js';
 import newsletterRouter from './routes/newsletterRoute.js';
 import settingsRouter from './routes/settingsRoute.js';
 import contactRouter from './routes/contactRoute.js';
+import analyticsRouter from './routes/analyticsRoute.js';
 
 //import routes
 
@@ -43,6 +44,7 @@ app.use('/api/review', reviewRouter)
 app.use('/api/newsletter', newsletterRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/contact', contactRouter)
+app.use('/api/analytics', analyticsRouter)
 
 app.get('/', (req, res) => {
     res.send('API Working')
