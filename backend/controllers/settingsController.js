@@ -78,8 +78,8 @@ const cleaners = {
     endDate: /^\d{4}-\d{2}-\d{2}$/.test(String(v.endDate || "")) ? String(v.endDate) : "",
     ctaLabel: str(v.ctaLabel, 30),
     link: link(v.link),
-    bgColor: color(v.bgColor, "#b30f63"),
-    textColor: color(v.textColor, "#ffffff"),
+    bgColor: color(v.bgColor, "#3a2f28"),
+    textColor: color(v.textColor, "#faf7f2"),
   }),
   promos: (v = []) =>
     (Array.isArray(v) ? v : [])

@@ -21,8 +21,9 @@ const SaleBanner = () => {
   const ctaProps = Cta === "a" ? { href: b.link, target: "_blank", rel: "noopener noreferrer" } : { to: b.link || "/collection" };
 
   // Shades are derived from the banner colour so it still follows whatever colour is set in admin.
-  const dark = `color-mix(in srgb, ${b.bgColor} 40%, #000)`;
-  const light = `color-mix(in srgb, ${b.bgColor} 65%, #fff)`;
+  const dark = `color-mix(in srgb, ${b.bgColor} 55%, #000)`;
+  const GOLD = "#c9a45c"; // matches the gold in the logo
+  const light = `color-mix(in srgb, ${b.bgColor} 55%, #8b7b6b)`; // warm taupe
   const offers = (b.text || "").split("|").map((t) => t.trim()).filter(Boolean);
   const stroke = { WebkitTextStroke: `2px ${dark}`, paintOrder: "stroke fill" };
 
@@ -46,7 +47,7 @@ const SaleBanner = () => {
         </defs>
       </svg>
       <svg className="hidden md:block absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1200 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <g fill="none" stroke="#fff" strokeOpacity="0.2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <g fill="none" stroke={b.textColor} strokeOpacity="0.16" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <use href="#sb-dress" transform="translate(30 22) rotate(-12) scale(1.3)" />
           <use href="#sb-hanger" transform="translate(170 10) rotate(10) scale(1.1)" />
           <use href="#sb-tee" transform="translate(300 30) rotate(-8) scale(1.1)" />
@@ -63,7 +64,7 @@ const SaleBanner = () => {
       </svg>
 
       <svg className="md:hidden absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 390 190" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <g fill="none" stroke="#fff" strokeOpacity="0.2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <g fill="none" stroke={b.textColor} strokeOpacity="0.16" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <use href="#sb-dress" transform="translate(8 14) rotate(-12) scale(1.1)" />
           <use href="#sb-tee" transform="translate(312 10) rotate(10) scale(1)" />
           <use href="#sb-hanger" transform="translate(12 118) rotate(10) scale(0.95)" />
@@ -76,9 +77,9 @@ const SaleBanner = () => {
       <div className="relative container-x py-2.5 md:py-3 flex flex-col lg:flex-row items-center justify-center gap-2 lg:gap-7">
         {/* SALE 11.11 SALE ribbon */}
         <div className="-skew-x-12 px-5 md:px-6 py-1.5 shadow-lg" style={{ backgroundColor: dark }}>
-          <div className="skew-x-12 flex items-center gap-2 md:gap-3 italic font-sans font-black leading-none text-white" style={{ fontSize: "clamp(1.25rem, 4vw, 1.9rem)" }}>
+          <div className="skew-x-12 flex items-center gap-2 md:gap-3 italic font-sans font-black leading-none" style={{ fontSize: "clamp(1.25rem, 4vw, 1.9rem)", color: b.textColor }}>
             {b.title && <span style={stroke}>{b.title}</span>}
-            {b.badge && <span style={{ ...stroke, color: "#fff", fontSize: "1.25em" }}>{b.badge}</span>}
+            {b.badge && <span style={{ ...stroke, color: GOLD, fontSize: "1.25em" }}>{b.badge}</span>}
             {b.title && <span style={stroke}>{b.title}</span>}
           </div>
         </div>
@@ -89,8 +90,8 @@ const SaleBanner = () => {
             {offers.map((t, i) => (
               <span
                 key={i}
-                className="px-3 py-1.5 rounded-lg bg-white text-xs md:text-sm font-bold leading-tight text-center shadow-md"
-                style={{ color: dark, boxShadow: `0 2px 0 ${light}` }}
+                className="px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold leading-tight text-center shadow-md"
+                style={{ backgroundColor: "#faf7f2", color: "#231f1c", boxShadow: `0 2px 0 ${GOLD}` }}
               >
                 {t}
               </span>
@@ -103,7 +104,7 @@ const SaleBanner = () => {
             <Cta
               {...ctaProps}
               className="whitespace-nowrap px-5 py-2 rounded-full text-[11px] md:text-xs font-bold tracking-[0.16em] uppercase shadow-lg hover:scale-105 transition"
-              style={{ backgroundColor: dark, color: "#fff" }}
+              style={{ backgroundColor: GOLD, color: "#231f1c" }}
             >
               {b.ctaLabel} &rarr;
             </Cta>

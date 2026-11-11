@@ -39,8 +39,8 @@ export const DEFAULT_SETTINGS = {
     endDate: "2026-11-17", // banner hides itself after this day (YYYY-MM-DD, Sri Lanka time); empty = always show
     ctaLabel: "Shop Now",
     link: "/collection?offers=1",
-    bgColor: "#b30f63",
-    textColor: "#ffffff",
+    bgColor: "#3a2f28",
+    textColor: "#faf7f2",
   },
   promos: [],
   sections: {
