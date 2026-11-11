@@ -31,7 +31,21 @@ export const DEFAULT_SETTINGS = {
     productCtaLabel: "Shop this piece",
     slides: [],
   },
-  promos: [],
+  promos: [
+    // 11.11 Sale poster (until 17 November). Edit or delete it any time in admin > Promotions.
+    {
+      image: "https://www.ogeeera.lk/promo-1111.jpg",
+      title: "11.11 Sale",
+      subtitle: "",
+      badge: "",
+      ctaLabel: "",
+      link: "/collection?offers=1",
+      bgColor: "#3a2f28",
+      textColor: "#ffffff",
+      poster: true,
+      enabled: true,
+    },
+  ],
   sections: {
     categories: true,
     newArrivals: true,
