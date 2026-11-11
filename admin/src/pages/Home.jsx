@@ -606,20 +606,22 @@ const Home = ({ token }) => {
           </div>
           <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-gray-500">Page views, last 14 days</p>
-            <div className="mt-3 flex h-28 items-end gap-1">
+            <div className="mt-4 flex h-40 items-stretch gap-1 sm:gap-2">
               {visits.byDay.map((d) => {
                 const max = Math.max(...visits.byDay.map((x) => x.views), 1);
+                const pct = d.views ? Math.max((d.views / max) * 100, 3) : 0;
                 return (
-                  <div key={d.day} className="flex-1" title={`${d.day}: ${d.views} views, ${d.visitors} visitors`}>
-                    <div className="w-full rounded-t bg-sky-400" style={{ height: `${Math.max((d.views / max) * 100, d.views ? 4 : 1)}%` }} />
+                  <div key={d.day} className="flex h-full flex-1 flex-col items-center justify-end" title={`${d.day}: ${d.views} views, ${d.visitors} visitors`}>
+                    <span className="mb-1 text-[10px] font-medium text-gray-500">{d.views || ""}</span>
+                    <div className="flex w-full flex-1 items-end">
+                      <div className="w-full rounded-t bg-sky-400" style={{ height: `${pct}%` }} />
+                    </div>
+                    <span className="mt-1 text-[9px] text-gray-400">{d.day.slice(8)}</span>
                   </div>
                 );
               })}
             </div>
-            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
-              <span>{visits.byDay[0].day.slice(5)}</span>
-              <span>{visits.byDay[13].day.slice(5)}</span>
-            </div>
+            <p className="mt-1 text-center text-[10px] text-gray-400">Day of month ({visits.byDay[0].day.slice(0, 7)} to {visits.byDay[13].day.slice(0, 7)})</p>
           </div>
         </div>
       )}
