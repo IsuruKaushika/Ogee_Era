@@ -82,6 +82,7 @@ const cleaners = {
         link: link(p.link),
         bgColor: color(p.bgColor, "#3a2f28"),
         textColor: color(p.textColor, "#ffffff"),
+        poster: p.poster === true || p.poster === "true",
         enabled: p.enabled !== false && p.enabled !== "false",
       }))
       .filter((p) => p.title || p.image),

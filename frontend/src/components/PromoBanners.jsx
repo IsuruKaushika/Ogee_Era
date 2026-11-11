@@ -3,6 +3,8 @@ import { useSettings } from "../context/SettingsContext";
 
 const wide = (u) => u?.replace("/upload/", "/upload/f_auto,q_auto,w_900,c_limit/");
 
+const poster = (u) => u?.replace("/upload/", "/upload/f_auto,q_auto,w_1200,c_limit/");
+
 const Wrap = ({ to, className, style, children }) =>
   !to ? (
     <div className={className} style={style}>{children}</div>
@@ -18,10 +20,22 @@ const PromoBanners = () => {
   const active = promos.filter((p) => p.enabled !== false);
   if (!active.length) return null;
 
+  const posters = active.filter((p) => p.poster && p.image);
+  const cards = active.filter((p) => !(p.poster && p.image));
+
   return (
-    <section className="container-x pb-10 md:pb-14">
-      <div className={`grid gap-4 ${active.length === 1 ? "" : "md:grid-cols-2"}`}>
-        {active.map((p, i) => (
+    <section className="container-x pb-10 md:pb-14 space-y-4">
+      {posters.length > 0 && (
+        <div className={`grid gap-4 justify-center ${posters.length === 1 ? "" : "md:grid-cols-2"}`}>
+          {posters.map((p, i) => (
+            <Wrap key={i} to={p.link} className={`block w-full mx-auto overflow-hidden shadow-sm ${posters.length === 1 ? "max-w-[620px]" : ""}`}>
+              <img src={poster(p.image)} alt={p.title || "Special offer"} className="w-full h-auto block" loading="lazy" />
+            </Wrap>
+          ))}
+        </div>
+      )}
+      {cards.length > 0 && <div className={`grid gap-4 ${cards.length === 1 ? "" : "md:grid-cols-2"}`}>
+        {cards.map((p, i) => (
           <Wrap
             key={i}
             to={p.link}
@@ -39,7 +53,7 @@ const PromoBanners = () => {
             </div>
           </Wrap>
         ))}
-      </div>
+      </div>}
     </section>
   );
 };

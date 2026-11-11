@@ -151,6 +151,7 @@ const Promotions = ({ token }) => {
                 <div className="flex flex-wrap items-center gap-5 text-sm">
                   <label className="flex items-center gap-2">Background <input type="color" value={p.bgColor} onChange={(e) => editPromo(i, "bgColor", e.target.value)} /></label>
                   <label className="flex items-center gap-2">Text <input type="color" value={p.textColor} onChange={(e) => editPromo(i, "textColor", e.target.value)} /></label>
+                  <label className="flex items-center gap-2" title="Use for a finished poster/flyer: shows the whole picture with no text added"><input type="checkbox" checked={p.poster === true} onChange={(e) => editPromo(i, "poster", e.target.checked)} /> Show picture as a full poster</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={p.enabled !== false} onChange={(e) => editPromo(i, "enabled", e.target.checked)} /> Visible</label>
                 </div>
               </div>
