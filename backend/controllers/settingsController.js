@@ -70,6 +70,17 @@ const cleaners = {
       }))
       .filter((s) => s.image),
   }),
+  saleBanner: (v = {}) => ({
+    enabled: bool(v.enabled),
+    badge: str(v.badge, 12),
+    title: str(v.title, 40),
+    text: str(v.text, 160),
+    endDate: /^\d{4}-\d{2}-\d{2}$/.test(String(v.endDate || "")) ? String(v.endDate) : "",
+    ctaLabel: str(v.ctaLabel, 30),
+    link: link(v.link),
+    bgColor: color(v.bgColor, "#b30f63"),
+    textColor: color(v.textColor, "#ffffff"),
+  }),
   promos: (v = []) =>
     (Array.isArray(v) ? v : [])
       .slice(0, 6)

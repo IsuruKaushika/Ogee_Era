@@ -31,21 +31,18 @@ export const DEFAULT_SETTINGS = {
     productCtaLabel: "Shop this piece",
     slides: [],
   },
-  promos: [
-    // 11.11 Sale poster (until 17 November). Edit or delete it any time in admin > Promotions.
-    {
-      image: "https://www.ogeeera.lk/promo-1111.jpg",
-      title: "11.11 Sale",
-      subtitle: "",
-      badge: "",
-      ctaLabel: "",
-      link: "/collection?offers=1",
-      bgColor: "#3a2f28",
-      textColor: "#ffffff",
-      poster: true,
-      enabled: true,
-    },
-  ],
+  saleBanner: {
+    enabled: true,
+    badge: "11.11",
+    title: "SALE",
+    text: "Up to 50% off on selected items  |  Free delivery on orders above Rs. 7,500",
+    endDate: "2026-11-17", // banner hides itself after this day (YYYY-MM-DD, Sri Lanka time); empty = always show
+    ctaLabel: "Shop Now",
+    link: "/collection?offers=1",
+    bgColor: "#b30f63",
+    textColor: "#ffffff",
+  },
+  promos: [],
   sections: {
     categories: true,
     newArrivals: true,

@@ -1,3 +1,4 @@
+import SaleBanner from "../components/SaleBanner";
 import Hero from "../components/Hero";
 import CategoryCircles from "../components/CategoryCircles";
 import LatestCollection from "../components/LatestCollection";
@@ -16,6 +17,7 @@ const Home = () => {
   const { sections } = useSettings();
   return (
     <div>
+      <SaleBanner />
       <Hero />
       {sections.categories && <CategoryCircles />}
       {sections.newArrivals && <LatestCollection />}

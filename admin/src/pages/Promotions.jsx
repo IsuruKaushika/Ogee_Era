@@ -29,6 +29,7 @@ const Card = ({ title, children, right }) => (
 const SECTIONS = [
   ["categories", "Category circles"],
   ["newArrivals", "New arrivals"],
+  ["saleBanner", "Sale banner"],
   ["promos", "Promotion banners"],
   ["bestSellers", "Best sellers"],
   ["specialOffers", "Special offers"],
@@ -69,6 +70,28 @@ const Promotions = ({ token }) => {
         <div className="grid sm:grid-cols-2 gap-4">
           <Input label="Main message" value={s.announcement.text} onChange={set("announcement", "text")} hint="Leave empty to show the free-delivery message automatically." max={160} />
           <Input label="Second message (desktop)" value={s.announcement.secondaryText} onChange={set("announcement", "secondaryText")} hint="Leave empty to show the returns message automatically." max={160} />
+        </div>
+      </Card>
+
+      <Card title="Sale banner (strip above the homepage slider)">
+        <label className="flex items-center gap-2 mb-3 text-sm">
+          <input type="checkbox" checked={s.saleBanner.enabled} onChange={(e) => set("saleBanner", "enabled")(e.target.checked)} /> Show the sale banner
+        </label>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Input label="Big badge (e.g. 11.11)" value={s.saleBanner.badge} onChange={set("saleBanner", "badge")} max={12} />
+          <Input label="Title (e.g. SALE)" value={s.saleBanner.title} onChange={set("saleBanner", "title")} max={40} />
+          <Input label="Message" value={s.saleBanner.text} onChange={set("saleBanner", "text")} max={160} />
+          <Input label="Button text" value={s.saleBanner.ctaLabel} onChange={set("saleBanner", "ctaLabel")} max={30} />
+          <Input label="Button goes to" value={s.saleBanner.link} onChange={set("saleBanner", "link")} list="links" />
+          <label className="block text-sm">
+            <span className="block mb-1">Last day (hides itself after this)</span>
+            <input type="date" className="w-full px-3 py-2" value={s.saleBanner.endDate || ""} onChange={(e) => set("saleBanner", "endDate")(e.target.value)} />
+            <span className="block mt-1 text-xs text-gray-400">Clear the date to keep it showing until you turn it off.</span>
+          </label>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-6 text-sm">
+          <label className="flex items-center gap-2">Background <input type="color" value={s.saleBanner.bgColor} onChange={(e) => set("saleBanner", "bgColor")(e.target.value)} /></label>
+          <label className="flex items-center gap-2">Text <input type="color" value={s.saleBanner.textColor} onChange={(e) => set("saleBanner", "textColor")(e.target.value)} /></label>
         </div>
       </Card>
 
@@ -186,7 +209,7 @@ const Promotions = ({ token }) => {
       </Card>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-6 py-3 flex justify-end">
-        <button disabled={saving} onClick={() => save(["announcement", "hero", "promos", "sections", "newsletter"])} className="px-6 py-2 bg-black text-white disabled:opacity-60">
+        <button disabled={saving} onClick={() => save(["announcement", "saleBanner", "hero", "promos", "sections", "newsletter"])} className="px-6 py-2 bg-black text-white disabled:opacity-60">
           {saving ? "Saving..." : "Save changes"}
         </button>
       </div>
