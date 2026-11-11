@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
+import { useSettings } from "../context/SettingsContext";
 import { googleLogout } from "@react-oauth/google";
 import Logo from "./Logo";
 import { FiHeart, FiSearch, FiShoppingBag, FiUser, FiMenu, FiX } from "react-icons/fi";
@@ -18,6 +19,7 @@ export const NAV_LINKS = [
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const { commerce } = useSettings();
   const {
     showSearch, setShowSearch, getCartCount, getWishlistCount, navigate,
     token, setToken, setCartItems, setWishlistItems,
@@ -50,7 +52,7 @@ const Navbar = () => {
           <Logo className="h-14 md:h-[68px]" />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-7 text-[13px] text-ink/85" aria-label="Main">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-[13px] text-ink/85" aria-label="Main">
           {NAV_LINKS.map((l) => (
             <NavLink key={l.label} to={l.to} className={({ isActive }) => `hover:text-ink pb-0.5 border-b ${isActive && !l.to.includes("?") ? "border-ink" : "border-transparent"}`}>
               {l.label}
@@ -59,6 +61,10 @@ const Navbar = () => {
         </nav>
 
         <div className="flex items-center gap-4 md:gap-5">
+          <div className="hidden lg:flex items-center gap-4 text-[13px] text-ink/85 pr-1">
+            <Link to="/orders" className="hover:text-ink whitespace-nowrap">Track Order</Link>
+            <Link to="/faq" className="hover:text-ink whitespace-nowrap">Help Center</Link>
+          </div>
           <button onClick={() => setShowSearch(!showSearch)} aria-label="Search"><FiSearch className="w-[18px] h-[18px]" /></button>
           <div className="relative group hidden sm:block">
             <button onClick={() => (token ? navigate("/account") : navigate("/login"))} aria-label="Account">
@@ -94,7 +100,7 @@ const Navbar = () => {
               <button onClick={() => setOpen(false)} aria-label="Close menu"><FiX className="w-5 h-5" /></button>
             </div>
             <nav className="flex flex-col text-[15px]">
-              {[...NAV_LINKS, { to: "/about", label: "About" }, { to: "/contact", label: "Contact" }, { to: "/wishlist", label: "Wishlist" }, { to: "/faq", label: "Help Center" }].map((l) => (
+              {[...NAV_LINKS, { to: "/about", label: "About" }, { to: "/contact", label: "Contact" }, { to: "/wishlist", label: "Wishlist" }, { to: "/orders", label: "Track Order" }, { to: "/faq", label: "Help Center" }].map((l) => (
                 <NavLink key={l.label} to={l.to} onClick={() => setOpen(false)} className="py-3 border-b border-stone/60">
                   {l.label}
                 </NavLink>
@@ -107,6 +113,9 @@ const Navbar = () => {
                 {token ? "Logout" : "Login / Register"}
               </button>
             </nav>
+            {commerce.returnDays > 0 && (
+              <p className="mt-auto pt-6 text-xs text-ink/60">Easy returns within {commerce.returnDays} days</p>
+            )}
           </div>
         </div>,
         document.body,

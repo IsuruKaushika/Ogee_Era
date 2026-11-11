@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Routes, Route, Outlet, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import AnnouncementBar from "./components/AnnouncementBar";
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
 import Contact from "./pages/Contact";
@@ -68,7 +67,6 @@ const App = () => (
     <RouteSeo />
     <ScrollToTop />
     <AnalyticsTracker />
-    <AnnouncementBar />
     <Navbar />
     <SearchBar />
     <main className="flex-1">
